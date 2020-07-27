@@ -2,10 +2,11 @@
   "name": "eol-blocker",
   "version": "1.0.0-alpha",
   "description": "GitHub action to detect and block pull requests with invalid line-endings",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package": "ncc build --source-map"
   },
   "repository": {
     "type": "git",
@@ -23,6 +24,7 @@
     "node-fetch": "^2.6.0"
   },
   "devDependencies": {
+    "@zeit/ncc": "^0.22.3",
     "typescript": "^3.9.7"
   }
 }
