@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "package": "ncc build --source-map"
+    "package": "ncc build --source-map",
+    "all": "npm run build && npm run package"
   },
   "repository": {
     "type": "git",

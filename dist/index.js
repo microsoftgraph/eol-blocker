@@ -153,6 +153,33 @@ function onceStrict (fn) {
 
 /***/ }),
 
+/***/ 52:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PR_REPORT_FOOTER = exports.PR_REPORT_HEADER = void 0;
+exports.PR_REPORT_HEADER = `## EOL Blocker Validation Failed
+
+The following files in this pull request have Windows-style line endings:
+
+`;
+exports.PR_REPORT_FOOTER = `### How to fix
+
+To fix these errors and unblock your pull request, follow these steps.
+
+#### GitHub Desktop
+
+1. Do something...
+
+#### git CLI
+
+1. Do something....`;
+
+
+/***/ }),
+
 /***/ 87:
 /***/ (function(module) {
 
@@ -3568,10 +3595,29 @@ module.exports.Collection = Hook.Collection
 /***/ }),
 
 /***/ 526:
-/***/ (function(__unusedmodule, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -3581,13 +3627,88 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-const core = __webpack_require__(470);
-const github = __webpack_require__(469);
-const nodefetch = __webpack_require__(454);
+Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
+const github = __importStar(__webpack_require__(469));
+const UserStrings = __importStar(__webpack_require__(52));
 function run() {
+    var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(`Event: ${github.context.eventName}`);
-        console.log(`Owner: ${github.context.repo.owner}, repo: ${github.context.repo.repo}`);
+        try {
+            // Should only execute for pull requests
+            if (github.context.eventName === 'pull_request') {
+                const pullPayload = github.context.payload;
+                const octokit = github.getOctokit(process.env.API_TOKEN);
+                // Get all files in the pull request
+                const files = yield octokit.pulls.listFiles({
+                    owner: github.context.repo.owner,
+                    repo: github.context.repo.repo,
+                    pull_number: (_a = pullPayload.pull_request) === null || _a === void 0 ? void 0 : _a.number,
+                    per_page: 2
+                });
+                // Pattern to report: CRLF
+                const regex = /\r\n/g;
+                // List of files with CRLF
+                var errorFiles = [];
+                for (const file of files.data) {
+                    console.log(`File: ${file.filename}`);
+                    // Get the file's raw contents. This is important as
+                    // we need to see the data at rest on the server, not transformed
+                    // by git
+                    const response = yield fetch(file.raw_url);
+                    const content = yield response.text();
+                    // Check the contents for CRLF
+                    if (regex.test(content)) {
+                        // Found, add to list of "bad" files
+                        errorFiles.push(file);
+                        console.log('File contains CRLF');
+                    }
+                    else {
+                        console.log('File is clean');
+                    }
+                }
+                // Initialize comment
+                var prComment = UserStrings.PR_REPORT_HEADER;
+                // If there are files with CRLF, build the comment
+                if (errorFiles.length > 0) {
+                    // Create a bullted list of the files
+                    errorFiles.forEach(file => {
+                        prComment = prComment + `- ${file.filename}\n`;
+                    });
+                    // Add the footer (instructions to fix)
+                    prComment = prComment + UserStrings.PR_REPORT_FOOTER;
+                    // Post the comment in the pull request
+                    octokit.issues.createComment({
+                        owner: github.context.repo.owner,
+                        repo: github.context.repo.repo,
+                        issue_number: (_b = pullPayload.pull_request) === null || _b === void 0 ? void 0 : _b.number,
+                        body: prComment
+                    });
+                    // Add the crlf detected label
+                    octokit.issues.addLabels({
+                        owner: github.context.repo.owner,
+                        repo: github.context.repo.repo,
+                        issue_number: (_c = pullPayload.pull_request) === null || _c === void 0 ? void 0 : _c.number,
+                        labels: ['crlf detected']
+                    });
+                    // Indicate failure to block the pull request
+                    core.setFailed('Files with CRLF detected in pull request');
+                }
+                else {
+                    // No CRLF detected, remove the crlf detected label if present
+                    octokit.issues.removeLabel({
+                        owner: github.context.repo.owner,
+                        repo: github.context.repo.repo,
+                        issue_number: (_d = pullPayload.pull_request) === null || _d === void 0 ? void 0 : _d.number,
+                        name: 'crlf detected'
+                    });
+                }
+            }
+        }
+        catch (error) {
+            // General error
+            core.setFailed(`Unexpected error: \n${error.message}\n\nSee action logs for more information.`);
+        }
     });
 }
 run();
