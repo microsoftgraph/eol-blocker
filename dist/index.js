@@ -3627,9 +3627,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
+const node_fetch_1 = __importDefault(__webpack_require__(454));
 const UserStrings = __importStar(__webpack_require__(52));
 function run() {
     var _a, _b, _c, _d;
@@ -3655,7 +3659,7 @@ function run() {
                     // Get the file's raw contents. This is important as
                     // we need to see the data at rest on the server, not transformed
                     // by git
-                    const response = yield fetch(file.raw_url);
+                    const response = yield node_fetch_1.default(file.raw_url);
                     const content = yield response.text();
                     // Check the contents for CRLF
                     if (regex.test(content)) {
