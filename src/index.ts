@@ -59,7 +59,7 @@ async function run(): Promise<void> {
         prComment = prComment + UserStrings.PR_REPORT_FOOTER;
 
         // Post the comment in the pull request
-        octokit.issues.createComment({
+        await octokit.issues.createComment({
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
           issue_number: pullPayload.pull_request?.number!,
@@ -67,7 +67,7 @@ async function run(): Promise<void> {
         });
 
         // Add the crlf detected label
-        octokit.issues.addLabels({
+        await octokit.issues.addLabels({
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
           issue_number: pullPayload.pull_request?.number!,
@@ -78,7 +78,7 @@ async function run(): Promise<void> {
         core.setFailed('Files with CRLF detected in pull request');
       } else {
         // No CRLF detected, remove the crlf detected label if present
-        octokit.issues.removeLabel({
+        await octokit.issues.removeLabel({
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
           issue_number: pullPayload.pull_request?.number!,
