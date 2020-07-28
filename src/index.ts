@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import * as Webhooks from '@octokit/webhooks';
 import fetch from 'node-fetch';
 import * as UserStrings from './strings';
 
@@ -7,7 +8,7 @@ async function run(): Promise<void> {
   try {
     // Should only execute for pull requests
     if (github.context.eventName === 'pull_request') {
-      const pullPayload = github.context.payload;
+      const pullPayload = github.context.payload as Webhooks.Webhooks.WebhookPayloadPullRequest;
 
       const octokit = github.getOctokit(process.env.API_TOKEN!);
 
@@ -16,61 +17,61 @@ async function run(): Promise<void> {
         'GET /repos/:owner/:repo/pulls/:pull_number/files', {
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
-          pull_number: pullPayload.pull_request?.number!
+          pull_number: pullPayload.pull_request.number
         });
-
-      console.log(`Pull contains ${files.length} files`);
-
-      console.log(`Full dump of payload: ${JSON.stringify(files, null, 2)}`);
-
-      // Pattern to report: CRLF
-      const regex = /\r\n/g;
 
       // List of files with CRLF
       var errorFiles = [];
 
       for (const file of files) {
-        console.log(`File: ${file.filename}`);
-
         // Get the file's raw contents. This is important as
         // we need to see the data at rest on the server, not transformed
         // by git
         const response = await fetch(file.raw_url);
         const content = await response.text();
 
-        console.log(`Contents: ${content}`);
-
-        // Reset regex
-        regex.lastIndex = 0;
         // Check the contents for CRLF
         if (/\r\n/g.test(content)) {
           // Found, add to list of "bad" files
           errorFiles.push(file);
-          console.log('File contains CRLF');
+          console.log(`File: ${file.filename} - contains CRLF`);
         } else {
-          console.log('File is clean');
+          console.log(`File: ${file.filename} - no CRLF`);
         }
       }
-
-      // Initialize comment
-      var prComment = UserStrings.PR_REPORT_HEADER;
 
       // If there are files with CRLF, build the comment
       if (errorFiles.length > 0) {
 
-        // Create a bullted list of the files
+        var fileList = '';
+
+        // Create a bulleted list of the files
         errorFiles.forEach(file => {
-          prComment = prComment + `- ${file.filename}\n`;
+          fileList = fileList + `- ${file.filename}\n`;
         });
 
-        // Add the footer (instructions to fix)
-        prComment = prComment + UserStrings.PR_REPORT_FOOTER;
+        const prComment = `${UserStrings.PR_REPORT_HEADER}
+
+${fileList}
+
+${UserStrings.PR_REPORT_FIX_INTRO}
+
+\`\`\`
+git checkout ${pullPayload.pull_request.head.ref}
+git fetch origin
+git rm --cached ${errorFiles.join(' ')}
+git add ${errorFiles.join(' ')}
+git commit -a -m "Fix line endings"
+\`\`\`
+
+${UserStrings.PR_REPORT_FOOTER}`;
+
 
         // Post the comment in the pull request
         await octokit.issues.createComment({
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
-          issue_number: pullPayload.pull_request?.number!,
+          issue_number: pullPayload.pull_request.number,
           body: prComment
         });
 
@@ -78,7 +79,7 @@ async function run(): Promise<void> {
         await octokit.issues.addLabels({
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
-          issue_number: pullPayload.pull_request?.number!,
+          issue_number: pullPayload.pull_request.number,
           labels: [ 'crlf detected' ]
         });
 
@@ -90,7 +91,7 @@ async function run(): Promise<void> {
         await octokit.issues.removeLabel({
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
-          issue_number: pullPayload.pull_request?.number!,
+          issue_number: pullPayload.pull_request.number,
           name: 'crlf detected'
         });
         } catch (labelError) {
