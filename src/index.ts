@@ -41,7 +41,7 @@ async function run(): Promise<void> {
         // Reset regex
         regex.lastIndex = 0;
         // Check the contents for CRLF
-        if (regex.test(content)) {
+        if (/\r\n/g.test(content)) {
           // Found, add to list of "bad" files
           errorFiles.push(file);
           console.log('File contains CRLF');
