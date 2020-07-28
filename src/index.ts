@@ -12,14 +12,14 @@ async function run(): Promise<void> {
       const octokit = github.getOctokit(process.env.API_TOKEN!);
 
       // Get all files in the pull request
-      const files = await octokit.pulls.listFiles({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        pull_number: pullPayload.pull_request?.number!,
-        per_page: 2
-      });
+      const files = await octokit.paginate(
+        'GET /repos/:owner/:repo/pulls/:pull_number/files', {
+          owner: github.context.repo.owner,
+          repo: github.context.repo.repo,
+          pull_number: pullPayload.pull_request?.number!
+        });
 
-      console.log(`Pull contains ${files.data.length} files`);
+      console.log(`Pull contains ${files.length} files`);
 
       console.log(`Full dump of payload: ${JSON.stringify(files, null, 2)}`);
 
@@ -29,7 +29,7 @@ async function run(): Promise<void> {
       // List of files with CRLF
       var errorFiles = [];
 
-      for (const file of files.data) {
+      for (const file of files) {
         console.log(`File: ${file.filename}`);
 
         // Get the file's raw contents. This is important as
