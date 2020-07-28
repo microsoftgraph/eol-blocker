@@ -62,6 +62,7 @@ git fetch origin
 git rm --cached ${errorFiles.join(' ')}
 git add ${errorFiles.join(' ')}
 git commit -a -m "Fix line endings"
+git push
 \`\`\`
 
 ${UserStrings.PR_REPORT_FOOTER}`;
