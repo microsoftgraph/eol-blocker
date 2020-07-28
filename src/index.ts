@@ -19,6 +19,8 @@ async function run(): Promise<void> {
         per_page: 2
       });
 
+      console.log(`Pull contains ${files.data.length} files`);
+
       // Pattern to report: CRLF
       const regex = /\r\n/g;
 
@@ -78,17 +80,24 @@ async function run(): Promise<void> {
         core.setFailed('Files with CRLF detected in pull request');
       } else {
         // No CRLF detected, remove the crlf detected label if present
+        try {
         await octokit.issues.removeLabel({
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
           issue_number: pullPayload.pull_request?.number!,
           name: 'crlf detected'
         });
+        } catch (labelError) {
+          // If label wasn't there, this returns an error
+          if (labelError.message !== 'Label does not exist') {
+            core.setFailed(`Unexpected error: \n${labelError.message}`)
+          }
+        }
       }
     }
   } catch (error) {
     // General error
-    core.setFailed(`Unexpected error: \n${error.message}\n\nSee action logs for more information.`);
+    core.setFailed(`Unexpected error: \n${error.message}`);
   }
 }
 
