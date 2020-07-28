@@ -38,6 +38,8 @@ async function run(): Promise<void> {
         const response = await fetch(file.raw_url);
         const content = await response.text();
 
+        // Reset regex
+        regex.lastIndex = 0;
         // Check the contents for CRLF
         if (regex.test(content)) {
           // Found, add to list of "bad" files
