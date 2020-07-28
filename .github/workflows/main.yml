@@ -9,4 +9,4 @@ jobs:
       env:
         API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       id: validate
-      uses: microsoftgraph/eol-blocker@v1.0.0-alpha.5
+      uses: microsoftgraph/eol-blocker@v1.0.0-alpha.6

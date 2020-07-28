@@ -3644,19 +3644,18 @@ function run() {
                 const pullPayload = github.context.payload;
                 const octokit = github.getOctokit(process.env.API_TOKEN);
                 // Get all files in the pull request
-                const files = yield octokit.pulls.listFiles({
+                const files = yield octokit.paginate('GET /repos/:owner/:repo/pulls/:pull_number/files', {
                     owner: github.context.repo.owner,
                     repo: github.context.repo.repo,
-                    pull_number: (_a = pullPayload.pull_request) === null || _a === void 0 ? void 0 : _a.number,
-                    per_page: 2
+                    pull_number: (_a = pullPayload.pull_request) === null || _a === void 0 ? void 0 : _a.number
                 });
-                console.log(`Pull contains ${files.data.length} files`);
+                console.log(`Pull contains ${files.length} files`);
                 console.log(`Full dump of payload: ${JSON.stringify(files, null, 2)}`);
                 // Pattern to report: CRLF
                 const regex = /\r\n/g;
                 // List of files with CRLF
                 var errorFiles = [];
-                for (const file of files.data) {
+                for (const file of files) {
                     console.log(`File: ${file.filename}`);
                     // Get the file's raw contents. This is important as
                     // we need to see the data at rest on the server, not transformed
