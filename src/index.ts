@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import fetch from 'node-fetch';
 import * as UserStrings from './strings';
 
 async function run(): Promise<void> {
