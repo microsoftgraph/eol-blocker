@@ -10,4 +10,4 @@ This is typically caused by uploading files directly to GitHub using the **Add f
 With your command-line interface (CLI) open in the root of the repository, run the following commands.
 `;
 
-export const PR_REPORT_FOOTER = `For assistance, please contact the admins of this repository.`
+export const PR_REPORT_FOOTER = `For assistance, please contact the admins of this repository.`;
