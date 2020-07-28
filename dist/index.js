@@ -3654,7 +3654,7 @@ function run() {
                     // Check the contents for CRLF
                     if (/\r\n/g.test(content)) {
                         // Found, add to list of "bad" files
-                        errorFiles.push(file);
+                        errorFiles.push(file.filename);
                         console.log(`File: ${file.filename} - contains CRLF`);
                     }
                     else {
@@ -3666,7 +3666,7 @@ function run() {
                     var fileList = '';
                     // Create a bulleted list of the files
                     errorFiles.forEach(file => {
-                        fileList = fileList + `- ${file.filename}\n`;
+                        fileList = fileList + `- ${file}\n`;
                     });
                     const prComment = `${UserStrings.PR_REPORT_HEADER}
 
