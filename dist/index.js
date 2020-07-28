@@ -3635,16 +3635,21 @@ function run() {
         try {
             // Should only execute for pull requests
             if (github.context.eventName === 'pull_request') {
-                const pullPayload = github.context.payload;
+                const pullPayload = github.context
+                    .payload;
+                if (process.env.API_TOKEN === undefined) {
+                    core.setFailed('No app token available.');
+                    return;
+                }
                 const octokit = github.getOctokit(process.env.API_TOKEN);
                 // Get all files in the pull request
                 const files = yield octokit.paginate('GET /repos/:owner/:repo/pulls/:pull_number/files', {
                     owner: github.context.repo.owner,
                     repo: github.context.repo.repo,
-                    pull_number: pullPayload.pull_request.number
+                    pull_number: pullPayload.pull_request.number,
                 });
                 // List of files with CRLF
-                var errorFiles = [];
+                const errorFiles = [];
                 for (const file of files) {
                     // Get the file's raw contents. This is important as
                     // we need to see the data at rest on the server, not transformed
@@ -3663,9 +3668,9 @@ function run() {
                 }
                 // If there are files with CRLF, build the comment
                 if (errorFiles.length > 0) {
-                    var fileList = '';
+                    let fileList = '';
                     // Create a bulleted list of the files
-                    errorFiles.forEach(file => {
+                    errorFiles.forEach((file) => {
                         fileList = fileList + `- ${file}\n`;
                     });
                     const prComment = `${UserStrings.PR_REPORT_HEADER}
@@ -3680,6 +3685,7 @@ git fetch origin
 git rm --cached ${errorFiles.join(' ')}
 git add ${errorFiles.join(' ')}
 git commit -a -m "Fix line endings"
+git push
 \`\`\`
 
 ${UserStrings.PR_REPORT_FOOTER}`;
@@ -3688,14 +3694,14 @@ ${UserStrings.PR_REPORT_FOOTER}`;
                         owner: github.context.repo.owner,
                         repo: github.context.repo.repo,
                         issue_number: pullPayload.pull_request.number,
-                        body: prComment
+                        body: prComment,
                     });
                     // Add the crlf detected label
                     yield octokit.issues.addLabels({
                         owner: github.context.repo.owner,
                         repo: github.context.repo.repo,
                         issue_number: pullPayload.pull_request.number,
-                        labels: ['crlf detected']
+                        labels: ['crlf detected'],
                     });
                     // Indicate failure to block the pull request
                     core.setFailed('Files with CRLF detected in pull request');
@@ -3707,7 +3713,7 @@ ${UserStrings.PR_REPORT_FOOTER}`;
                             owner: github.context.repo.owner,
                             repo: github.context.repo.repo,
                             issue_number: pullPayload.pull_request.number,
-                            name: 'crlf detected'
+                            name: 'crlf detected',
                         });
                     }
                     catch (labelError) {

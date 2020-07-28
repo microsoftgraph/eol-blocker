@@ -11,7 +11,12 @@ async function run(): Promise<void> {
       const pullPayload = github.context
         .payload as Webhooks.Webhooks.WebhookPayloadPullRequest;
 
-      const octokit = github.getOctokit(process.env.API_TOKEN!);
+      if (process.env.API_TOKEN === undefined) {
+        core.setFailed('No app token available.');
+        return;
+      }
+
+      const octokit = github.getOctokit(process.env.API_TOKEN);
 
       // Get all files in the pull request
       const files = await octokit.paginate(
@@ -24,7 +29,7 @@ async function run(): Promise<void> {
       );
 
       // List of files with CRLF
-      var errorFiles = [];
+      const errorFiles = [];
 
       for (const file of files) {
         // Get the file's raw contents. This is important as
@@ -45,7 +50,7 @@ async function run(): Promise<void> {
 
       // If there are files with CRLF, build the comment
       if (errorFiles.length > 0) {
-        var fileList = '';
+        let fileList = '';
 
         // Create a bulleted list of the files
         errorFiles.forEach((file) => {
