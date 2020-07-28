@@ -3650,6 +3650,7 @@ function run() {
                     pull_number: (_a = pullPayload.pull_request) === null || _a === void 0 ? void 0 : _a.number,
                     per_page: 2
                 });
+                console.log(`Pull contains ${files.data.length} files`);
                 // Pattern to report: CRLF
                 const regex = /\r\n/g;
                 // List of files with CRLF
@@ -3700,18 +3701,26 @@ function run() {
                 }
                 else {
                     // No CRLF detected, remove the crlf detected label if present
-                    yield octokit.issues.removeLabel({
-                        owner: github.context.repo.owner,
-                        repo: github.context.repo.repo,
-                        issue_number: (_d = pullPayload.pull_request) === null || _d === void 0 ? void 0 : _d.number,
-                        name: 'crlf detected'
-                    });
+                    try {
+                        yield octokit.issues.removeLabel({
+                            owner: github.context.repo.owner,
+                            repo: github.context.repo.repo,
+                            issue_number: (_d = pullPayload.pull_request) === null || _d === void 0 ? void 0 : _d.number,
+                            name: 'crlf detected'
+                        });
+                    }
+                    catch (labelError) {
+                        // If label wasn't there, this returns an error
+                        if (labelError.message !== 'Label does not exist') {
+                            core.setFailed(`Unexpected error: \n${labelError.message}`);
+                        }
+                    }
                 }
             }
         }
         catch (error) {
             // General error
-            core.setFailed(`Unexpected error: \n${error.message}\n\nSee action logs for more information.`);
+            core.setFailed(`Unexpected error: \n${error.message}`);
         }
     });
 }
