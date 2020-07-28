@@ -3662,6 +3662,7 @@ function run() {
                     // by git
                     const response = yield node_fetch_1.default(file.raw_url);
                     const content = yield response.text();
+                    console.log(`Contents: ${content}`);
                     // Reset regex
                     regex.lastIndex = 0;
                     // Check the contents for CRLF
