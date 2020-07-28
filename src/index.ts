@@ -38,6 +38,8 @@ async function run(): Promise<void> {
         const response = await fetch(file.raw_url);
         const content = await response.text();
 
+        console.log(`Contents: ${content}`);
+
         // Reset regex
         regex.lastIndex = 0;
         // Check the contents for CRLF
