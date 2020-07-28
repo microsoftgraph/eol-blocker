@@ -3682,14 +3682,14 @@ function run() {
                     // Add the footer (instructions to fix)
                     prComment = prComment + UserStrings.PR_REPORT_FOOTER;
                     // Post the comment in the pull request
-                    octokit.issues.createComment({
+                    yield octokit.issues.createComment({
                         owner: github.context.repo.owner,
                         repo: github.context.repo.repo,
                         issue_number: (_b = pullPayload.pull_request) === null || _b === void 0 ? void 0 : _b.number,
                         body: prComment
                     });
                     // Add the crlf detected label
-                    octokit.issues.addLabels({
+                    yield octokit.issues.addLabels({
                         owner: github.context.repo.owner,
                         repo: github.context.repo.repo,
                         issue_number: (_c = pullPayload.pull_request) === null || _c === void 0 ? void 0 : _c.number,
@@ -3700,7 +3700,7 @@ function run() {
                 }
                 else {
                     // No CRLF detected, remove the crlf detected label if present
-                    octokit.issues.removeLabel({
+                    yield octokit.issues.removeLabel({
                         owner: github.context.repo.owner,
                         repo: github.context.repo.repo,
                         issue_number: (_d = pullPayload.pull_request) === null || _d === void 0 ? void 0 : _d.number,
