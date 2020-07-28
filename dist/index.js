@@ -3651,6 +3651,7 @@ function run() {
                     per_page: 2
                 });
                 console.log(`Pull contains ${files.data.length} files`);
+                console.log(`Full dump of payload: ${JSON.stringify(files, null, 2)}`);
                 // Pattern to report: CRLF
                 const regex = /\r\n/g;
                 // List of files with CRLF
