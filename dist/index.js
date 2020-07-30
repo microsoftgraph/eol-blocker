@@ -3622,14 +3622,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
-const node_fetch_1 = __importDefault(__webpack_require__(454));
-const UserStrings = __importStar(__webpack_require__(52));
+const validation_1 = __webpack_require__(762);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -3649,46 +3645,10 @@ function run() {
                     pull_number: pullPayload.pull_request.number,
                 });
                 // List of files with CRLF
-                const errorFiles = [];
-                for (const file of files) {
-                    // Get the file's raw contents. This is important as
-                    // we need to see the data at rest on the server, not transformed
-                    // by git
-                    const response = yield node_fetch_1.default(file.raw_url);
-                    const content = yield response.text();
-                    // Check the contents for CRLF
-                    if (/\r\n/g.test(content)) {
-                        // Found, add to list of "bad" files
-                        errorFiles.push(file.filename);
-                        console.log(`File: ${file.filename} - contains CRLF`);
-                    }
-                    else {
-                        console.log(`File: ${file.filename} - no CRLF`);
-                    }
-                }
+                const errorFiles = yield validation_1.checkFilesForCrlf(files);
                 // If there are files with CRLF, build the comment
                 if (errorFiles.length > 0) {
-                    let fileList = '';
-                    // Create a bulleted list of the files
-                    errorFiles.forEach((file) => {
-                        fileList = fileList + `- ${file}\n`;
-                    });
-                    const prComment = `${UserStrings.PR_REPORT_HEADER}
-
-${fileList}
-
-${UserStrings.PR_REPORT_FIX_INTRO}
-
-\`\`\`
-git checkout ${pullPayload.pull_request.head.ref}
-git fetch origin
-git rm --cached ${errorFiles.join(' ')}
-git add ${errorFiles.join(' ')}
-git commit -a -m "Fix line endings"
-git push
-\`\`\`
-
-${UserStrings.PR_REPORT_FOOTER}`;
+                    const prComment = validation_1.generatePrComment(errorFiles, pullPayload.pull_request.head.ref);
                     // Post the comment in the pull request
                     yield octokit.issues.createComment({
                         owner: github.context.repo.owner,
@@ -4549,6 +4509,101 @@ exports.request = request;
 /***/ (function(module) {
 
 module.exports = require("zlib");
+
+/***/ }),
+
+/***/ 762:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.generatePrComment = exports.checkFileContentForCrlf = exports.checkFilesForCrlf = void 0;
+const node_fetch_1 = __importDefault(__webpack_require__(454));
+const UserStrings = __importStar(__webpack_require__(52));
+function checkFilesForCrlf(files) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // List of files with CRLF
+        const errorFiles = [];
+        for (const file of files) {
+            // Check the contents for CRLF
+            if (yield checkFileContentForCrlf(file.raw_url)) {
+                // Found, add to list of "bad" files
+                errorFiles.push(file.filename);
+                console.log(`File: ${file.filename} - contains CRLF`);
+            }
+            else {
+                console.log(`File: ${file.filename} - no CRLF`);
+            }
+        }
+        return errorFiles;
+    });
+}
+exports.checkFilesForCrlf = checkFilesForCrlf;
+function checkFileContentForCrlf(fileUrl) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Get the file's raw contents. This is important as
+        // we need to see the data at rest on the server, not transformed
+        // by git
+        const response = yield node_fetch_1.default(fileUrl);
+        const content = yield response.text();
+        return /\r\n/g.test(content);
+    });
+}
+exports.checkFileContentForCrlf = checkFileContentForCrlf;
+function generatePrComment(errorFiles, head) {
+    let fileList = '';
+    // Create a bulleted list of the files
+    errorFiles.forEach((file) => {
+        fileList = fileList + `- ${file}\n`;
+    });
+    return `${UserStrings.PR_REPORT_HEADER}
+${fileList}
+${UserStrings.PR_REPORT_FIX_INTRO}
+\`\`\`
+git checkout ${head}
+git fetch origin
+git rm --cached ${errorFiles.join(' ')}
+git add ${errorFiles.join(' ')}
+git commit -a -m "Fix line endings"
+git push
+\`\`\`
+
+${UserStrings.PR_REPORT_FOOTER}`;
+}
+exports.generatePrComment = generatePrComment;
+
 
 /***/ }),
 
