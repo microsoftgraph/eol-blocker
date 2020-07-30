@@ -1,8 +1,6 @@
 import { expect, test } from '@jest/globals';
 import nock from 'nock';
 import { PullsListFilesResponseData } from '@octokit/types/dist-types';
-//jest.mock('node-fetch');
-//import fetch, { Response } from 'node-fetch';
 
 import {
   checkFileContentForCrlf,
