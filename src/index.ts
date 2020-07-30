@@ -33,7 +33,10 @@ async function run(): Promise<void> {
 
       // If there are files with CRLF, build the comment
       if (errorFiles.length > 0) {
-        const prComment = generatePrComment(errorFiles, pullPayload.pull_request.head.ref);
+        const prComment = generatePrComment(
+          errorFiles,
+          pullPayload.pull_request.head.ref
+        );
 
         // Post the comment in the pull request
         await octokit.issues.createComment({
