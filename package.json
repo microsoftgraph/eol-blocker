@@ -1,0 +1,46 @@
+{
+  "name": "eol-blocker",
+  "version": "1.0.0-beta",
+  "description": "GitHub action to detect and block pull requests with invalid line-endings",
+  "main": "lib/index.js",
+  "scripts": {
+    "format": "prettier --write **/*.ts",
+    "test": "jest",
+    "build": "tsc",
+    "package": "ncc build --source-map",
+    "all": "npm run format && npm run test && npm run build && npm run package"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microsoftgraph/eol-blocker.git"
+  },
+  "author": "jasonjoh",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/microsoftgraph/eol-blocker/issues"
+  },
+  "homepage": "https://github.com/microsoftgraph/eol-blocker#readme",
+  "dependencies": {
+    "@actions/core": "^1.2.4",
+    "@actions/github": "^4.0.0",
+    "@octokit/webhooks": "^7.6.5",
+    "node-fetch": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.5.7",
+    "@typescript-eslint/eslint-plugin": "^3.7.1",
+    "@typescript-eslint/parser": "^3.7.1",
+    "@zeit/ncc": "^0.22.3",
+    "eslint": "^7.5.0",
+    "eslint-config-prettier": "^6.11.0",
+    "jest": "^26.1.0",
+    "nock": "^13.0.3",
+    "prettier": "^2.0.5",
+    "ts-jest": "^26.1.4",
+    "typescript": "^3.9.7"
+  },
+  "prettier": {
+    "endOfLine": "auto",
+    "singleQuote": true
+  }
+}
