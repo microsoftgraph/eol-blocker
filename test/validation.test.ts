@@ -41,7 +41,7 @@ test('PR comment generates successfully', () => {
 const crlfFileContents = 'This file has\r\nWindows-style line-endings.\r\n';
 const lfFileContents = 'This file has\nUnix-style line-endings.\n';
 const mixedFileContents =
-  'This file has both\nWindows-style and \r\nUnix-style line edings.\r\n';
+  'This file has both\nWindows-style and \r\nUnix-style line endings.\r\n';
 
 test('File with CRLF is detected properly', async () => {
   nock('https://github.com')
