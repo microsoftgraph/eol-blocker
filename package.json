@@ -1,6 +1,6 @@
 {
   "name": "eol-blocker",
-  "version": "1.0.0-alpha",
+  "version": "1.0.0-beta",
   "description": "GitHub action to detect and block pull requests with invalid line-endings",
   "main": "lib/index.js",
   "scripts": {
