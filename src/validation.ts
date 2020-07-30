@@ -48,7 +48,7 @@ ${fileList}
 ${UserStrings.PR_REPORT_FIX_INTRO}
 \`\`\`
 git checkout ${head}
-git fetch origin
+git pull origin
 git rm --cached ${errorFiles.join(' ')}
 git add ${errorFiles.join(' ')}
 git commit -a -m "Fix line endings"

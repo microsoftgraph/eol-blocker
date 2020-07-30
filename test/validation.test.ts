@@ -25,7 +25,7 @@ With your command-line interface (CLI) open in the root of the repository, run t
 
 \`\`\`
 git checkout patch-1
-git fetch origin
+git pull origin
 git rm --cached test.md subfolder/test2.md
 git add test.md subfolder/test2.md
 git commit -a -m "Fix line endings"
