@@ -23,7 +23,9 @@ export async function checkFilesForCrlf(
   return errorFiles;
 }
 
-export async function checkFileContentForCrlf(fileUrl: string): Promise<boolean> {
+export async function checkFileContentForCrlf(
+  fileUrl: string
+): Promise<boolean> {
   // Get the file's raw contents. This is important as
   // we need to see the data at rest on the server, not transformed
   // by git
