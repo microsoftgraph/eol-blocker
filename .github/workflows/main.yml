@@ -1,3 +1,5 @@
+name: EOL Blocker
+
 on:
   pull_request:
     branches:
