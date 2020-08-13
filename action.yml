@@ -1,5 +1,9 @@
 name: 'EOL Blocker'
 description: 'Detects and blocks pull requests with improper end-of-line sequences'
+inputs:
+  repoToken:
+    description: 'Token for the repository.'
+    required: true
 runs:
   using: 'node12'
   main: 'dist/index.js'
