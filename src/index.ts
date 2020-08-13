@@ -38,21 +38,30 @@ async function run(): Promise<void> {
           pullPayload.pull_request.head.ref
         );
 
-        // Post the comment in the pull request
-        await octokit.issues.createComment({
-          owner: github.context.repo.owner,
-          repo: github.context.repo.repo,
-          issue_number: pullPayload.pull_request.number,
-          body: prComment,
-        });
+        try {
+          // Post the comment in the pull request
+          await octokit.issues.createComment({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: pullPayload.pull_request.number,
+            body: prComment,
+          });
+        } catch (createCommentError)
+        {
+          console.log(`Unable to create comment\n${JSON.stringify(createCommentError)}`);
+        }
 
-        // Add the crlf detected label
-        await octokit.issues.addLabels({
-          owner: github.context.repo.owner,
-          repo: github.context.repo.repo,
-          issue_number: pullPayload.pull_request.number,
-          labels: ['crlf detected'],
-        });
+        try {
+          // Add the crlf detected label
+          await octokit.issues.addLabels({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: pullPayload.pull_request.number,
+            labels: ['crlf detected'],
+          });
+        } catch (addLabelError) {
+          console.log(`Unable to add label\n${JSON.stringify(addLabelError)}`);
+        }
 
         // Indicate failure to block the pull request
         core.setFailed('Files with CRLF detected in pull request');
@@ -65,16 +74,15 @@ async function run(): Promise<void> {
             issue_number: pullPayload.pull_request.number,
             name: 'crlf detected',
           });
-        } catch (labelError) {
+        } catch (removeLabelError) {
           // If label wasn't there, this returns an error
-          if (labelError.message !== 'Label does not exist') {
-            console.log(`DELETE label error: ${JSON.stringify(labelError)}`);
-            core.setFailed(
-              `Unexpected label error: \n${JSON.stringify(labelError)}`
-            );
+          if (removeLabelError.message !== 'Label does not exist') {
+            console.log(`Unable to remove label\n${JSON.stringify(removeLabelError)}`);
+            //.setFailed(
+            //  `Unexpected label error: \n${JSON.stringify(removeLabelError)}`
+            //);
           }
         }
-        console.log('Removed label (if present)');
       }
     }
   } catch (error) {
