@@ -3646,6 +3646,7 @@ function run() {
                 });
                 // List of files with CRLF
                 const errorFiles = yield validation_1.checkFilesForCrlf(files);
+                console.log('File check complete.');
                 // If there are files with CRLF, build the comment
                 if (errorFiles.length > 0) {
                     const prComment = validation_1.generatePrComment(errorFiles, pullPayload.pull_request.head.ref);
@@ -3687,7 +3688,7 @@ function run() {
         }
         catch (error) {
             // General error
-            core.setFailed(`Unexpected error: \n${error.message}`);
+            core.setFailed(`Unexpected error: \n${JSON.stringify(error)}`);
         }
     });
 }

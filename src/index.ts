@@ -30,7 +30,7 @@ async function run(): Promise<void> {
 
       // List of files with CRLF
       const errorFiles = await checkFilesForCrlf(files);
-
+      console.log('File check complete.');
       // If there are files with CRLF, build the comment
       if (errorFiles.length > 0) {
         const prComment = generatePrComment(
@@ -75,7 +75,7 @@ async function run(): Promise<void> {
     }
   } catch (error) {
     // General error
-    core.setFailed(`Unexpected error: \n${error.message}`);
+    core.setFailed(`Unexpected error: \n${JSON.stringify(error)}`);
   }
 }
 
