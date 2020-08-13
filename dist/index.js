@@ -3646,7 +3646,7 @@ function run() {
                 });
                 // List of files with CRLF
                 const errorFiles = yield validation_1.checkFilesForCrlf(files);
-                console.log('File check complete.');
+                console.log(`File check complete. ${errorFiles.length} files with CRLF.`);
                 // If there are files with CRLF, build the comment
                 if (errorFiles.length > 0) {
                     const prComment = validation_1.generatePrComment(errorFiles, pullPayload.pull_request.head.ref);
@@ -3680,9 +3680,11 @@ function run() {
                     catch (labelError) {
                         // If label wasn't there, this returns an error
                         if (labelError.message !== 'Label does not exist') {
-                            core.setFailed(`Unexpected error: \n${labelError.message}`);
+                            console.log(`DELETE label error: ${JSON.stringify(labelError)}`);
+                            core.setFailed(`Unexpected label error: \n${JSON.stringify(labelError)}`);
                         }
                     }
+                    console.log('Removed label (if present)');
                 }
             }
         }

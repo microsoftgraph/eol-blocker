@@ -30,7 +30,7 @@ async function run(): Promise<void> {
 
       // List of files with CRLF
       const errorFiles = await checkFilesForCrlf(files);
-      console.log('File check complete.');
+      console.log(`File check complete. ${errorFiles.length} files with CRLF.`);
       // If there are files with CRLF, build the comment
       if (errorFiles.length > 0) {
         const prComment = generatePrComment(
@@ -68,9 +68,13 @@ async function run(): Promise<void> {
         } catch (labelError) {
           // If label wasn't there, this returns an error
           if (labelError.message !== 'Label does not exist') {
-            core.setFailed(`Unexpected error: \n${labelError.message}`);
+            console.log(`DELETE label error: ${JSON.stringify(labelError)}`);
+            core.setFailed(
+              `Unexpected label error: \n${JSON.stringify(labelError)}`
+            );
           }
         }
+        console.log('Removed label (if present)');
       }
     }
   } catch (error) {
