@@ -2,8 +2,7 @@ name: EOL Blocker
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   check_pull_request_job:
@@ -16,4 +15,4 @@ jobs:
       env:
         API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       id: validate
-      uses: microsoftgraph/eol-blocker@v1.0.1
+      uses: microsoftgraph/eol-blocker@v1.0.6.alpha.1
