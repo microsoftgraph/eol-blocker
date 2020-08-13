@@ -12,14 +12,6 @@ async function run(): Promise<void> {
       const pullPayload = github.context
         .payload as Webhooks.Webhooks.WebhookPayloadPullRequest;
 
-      //if (process.env.API_TOKEN === undefined) {
-      //  core.setFailed('No app token available.');
-      //  return;
-      //}
-
-      const tokenPre = repoToken.slice(0, 4);
-      console.log(`Token: ${tokenPre}...`);
-      //const octokit = github.getOctokit(process.env.API_TOKEN);
       const octokit = github.getOctokit(repoToken);
 
       // Get all files in the pull request
