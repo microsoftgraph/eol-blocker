@@ -46,9 +46,10 @@ async function run(): Promise<void> {
             issue_number: pullPayload.pull_request.number,
             body: prComment,
           });
-        } catch (createCommentError)
-        {
-          console.log(`Unable to create comment\n${JSON.stringify(createCommentError)}`);
+        } catch (createCommentError) {
+          console.log(
+            `Unable to create comment\n${JSON.stringify(createCommentError)}`
+          );
         }
 
         try {
@@ -77,7 +78,9 @@ async function run(): Promise<void> {
         } catch (removeLabelError) {
           // If label wasn't there, this returns an error
           if (removeLabelError.message !== 'Label does not exist') {
-            console.log(`Unable to remove label\n${JSON.stringify(removeLabelError)}`);
+            console.log(
+              `Unable to remove label\n${JSON.stringify(removeLabelError)}`
+            );
             //.setFailed(
             //  `Unexpected label error: \n${JSON.stringify(removeLabelError)}`
             //);
