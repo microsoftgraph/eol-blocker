@@ -3630,7 +3630,7 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // Should only execute for pull requests
-            if (github.context.eventName === 'pull_request') {
+            if (github.context.eventName === 'pull_request_target') {
                 const repoToken = core.getInput('repoToken', { required: true });
                 const pullPayload = github.context
                     .payload;
