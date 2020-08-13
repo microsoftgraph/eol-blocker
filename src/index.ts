@@ -7,7 +7,7 @@ import { checkFilesForCrlf, generatePrComment } from './validation';
 async function run(): Promise<void> {
   try {
     // Should only execute for pull requests
-    if (github.context.eventName === 'pull_request') {
+    if (github.context.eventName === 'pull_request_target') {
       const repoToken = core.getInput('repoToken', { required: true });
       const pullPayload = github.context
         .payload as Webhooks.Webhooks.WebhookPayloadPullRequest;

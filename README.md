@@ -30,7 +30,7 @@ To avoid these "bad" line endings from spreading to all contributors' clones, it
           with:
             repoToken: ${{ secrets.EOL_BLOCKER_TOKEN }}
           id: validate
-          uses: microsoftgraph/eol-blocker@v1.0.6
+          uses: microsoftgraph/eol-blocker@v1.0.7
     ```
 
 1. If you wish to block merges that are flagged by this action, set the **Check files for CRLF** check as a [required status check](https://docs.github.com/en/github/administering-a-repository/about-required-status-checks).
