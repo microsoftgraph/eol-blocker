@@ -12,7 +12,5 @@ jobs:
     - name: Validate files
       with:
         repoToken: ${{ secrets.EOL_BLOCKER_TOKEN}}
-      env:
-        API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       id: validate
       uses: microsoftgraph/eol-blocker@v1.0.6.alpha.1
