@@ -3631,13 +3631,17 @@ function run() {
         try {
             // Should only execute for pull requests
             if (github.context.eventName === 'pull_request') {
+                const repoToken = core.getInput('repoToken', { required: true });
                 const pullPayload = github.context
                     .payload;
-                if (process.env.API_TOKEN === undefined) {
-                    core.setFailed('No app token available.');
-                    return;
-                }
-                const octokit = github.getOctokit(process.env.API_TOKEN);
+                //if (process.env.API_TOKEN === undefined) {
+                //  core.setFailed('No app token available.');
+                //  return;
+                //}
+                const tokenPre = repoToken.slice(0, 4);
+                console.log(`Token: ${tokenPre}...`);
+                //const octokit = github.getOctokit(process.env.API_TOKEN);
+                const octokit = github.getOctokit(repoToken);
                 // Get all files in the pull request
                 const files = yield octokit.paginate('GET /repos/:owner/:repo/pulls/:pull_number/files', {
                     owner: github.context.repo.owner,
