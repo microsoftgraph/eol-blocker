@@ -12,8 +12,6 @@ To avoid these "bad" line endings from spreading to all contributors' clones, it
 
 1. Create a label in your repository named `crlf detected`. The action will flag pull requests with bad line endings with this tag. If the tag isn't present, the action will fail.
 
-1. Create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with the `public_repo` scope. Save this token as a [repo secret](https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets) named `EOL_BLOCKER_TOKEN`.
-
 1. To install this action, create a .yml file in **.github\workflows**, with the following syntax. (See [main.yml](.github\workflows\main.yml) in this repository for an example).
 
     ```yml
@@ -28,7 +26,7 @@ To avoid these "bad" line endings from spreading to all contributors' clones, it
         steps:
         - name: Validate files
           with:
-            repoToken: ${{ secrets.EOL_BLOCKER_TOKEN }}
+            repoToken: ${{ secrets.GITHUB_TOKEN }}
           id: validate
           uses: microsoftgraph/eol-blocker@v1.0.7
     ```
