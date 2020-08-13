@@ -8,15 +8,11 @@ async function run(): Promise<void> {
   try {
     // Should only execute for pull requests
     if (github.context.eventName === 'pull_request') {
+      const repoToken = core.getInput('repoToken', { required: true });
       const pullPayload = github.context
         .payload as Webhooks.Webhooks.WebhookPayloadPullRequest;
 
-      if (process.env.API_TOKEN === undefined) {
-        core.setFailed('No app token available.');
-        return;
-      }
-
-      const octokit = github.getOctokit(process.env.API_TOKEN);
+      const octokit = github.getOctokit(repoToken);
 
       // Get all files in the pull request
       const files = await octokit.paginate(
