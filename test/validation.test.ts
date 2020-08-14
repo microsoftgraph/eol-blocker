@@ -6,6 +6,7 @@ import {
   checkFileContentForCrlf,
   checkFilesForCrlf,
   generatePrComment,
+  isFileExcluded,
 } from '../src/validation';
 
 const errorFiles = ['test.md', 'subfolder/test2.md'];
@@ -133,7 +134,7 @@ test('PR with CRLF files is detected properly', async () => {
       'Content-Type': 'text/plain; charset=utf-8',
     });
 
-  expect(await checkFilesForCrlf(files)).toHaveLength(2);
+  expect(await checkFilesForCrlf(files, null)).toHaveLength(2);
 });
 
 test('PR without CRLF files is detected properly', async () => {
@@ -148,5 +149,63 @@ test('PR without CRLF files is detected properly', async () => {
       'Content-Type': 'text/plain; charset=utf-8',
     });
 
-  expect(await checkFilesForCrlf(files)).toHaveLength(0);
+  expect(await checkFilesForCrlf(files, null)).toHaveLength(0);
+});
+
+const fileList = [
+  'api-reference/beta/api/linkedresource-delete.md',
+  'api-reference/beta/api/linkedresource-get.md',
+  'api-reference/beta/api/linkedresource-update.md',
+  'api-reference/beta/api/opentypeextension-delete.md',
+  'api-reference/beta/api/opentypeextension-get.md',
+  'api-reference/beta/api/opentypeextension-post-opentypeextension.md',
+  'api-reference/beta/api/opentypeextension-update.md',
+  'api-reference/beta/api/todo-list-lists.md',
+  'api-reference/beta/api/todo-post-lists.md',
+  'api-reference/beta/resources/enums.md',
+  'api-reference/beta/resources/linkedresource.md',
+  'api-reference/beta/resources/opentypeextension.md',
+  'api-reference/beta/resources/todo-overview.md',
+  'api-reference/beta/resources/todo.md',
+  'api-reference/beta/resources/user.md',
+  'api-reference/beta/toc.yml',
+  'concepts/images/todo-api-entities.png',
+  'concepts/overview-major-services.md',
+  'concepts/permissions-reference.md',
+  'concepts/toc.yml',
+  'concepts/todo-concept-overview.md',
+  '.gitignore',
+  'LICENSE',
+  'images/image.jpg',
+  'README.md',
+  'image.jpg',
+  'images/image.bmp',
+  'images/image.jpeg',
+  'images/image.gif',
+  'image.PNG',
+];
+
+test('Files are correctly excluded with default exclude list', () => {
+  fileList.forEach((filename) => {
+    // Is this an image?
+    const isImage =
+      filename.indexOf('.png') > 0 ||
+      filename.indexOf('.jpg') > 0 ||
+      filename.indexOf('.jpeg') > 0 ||
+      filename.indexOf('.gif') > 0 ||
+      filename.indexOf('.bmp') > 0;
+
+    expect(isFileExcluded(filename, null)).toBe(isImage);
+  });
+});
+
+const excludePatterns = ['**/**.png', '**/**.gif'];
+
+test('Files are correctly excluded with custom exclude list', () => {
+  fileList.forEach((filename) => {
+    const expectedResult =
+      filename.indexOf('.png') > 0 || filename.indexOf('.gif') > 0;
+
+    expect(isFileExcluded(filename, excludePatterns)).toBe(expectedResult);
+  });
 });

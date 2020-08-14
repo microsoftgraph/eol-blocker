@@ -1,22 +1,29 @@
+import * as core from '@actions/core';
 import fetch from 'node-fetch';
 import * as UserStrings from './strings';
+import minimatch = require('minimatch');
 
 import { PullsListFilesResponseData } from '@octokit/types/dist-types';
 
 export async function checkFilesForCrlf(
-  files: PullsListFilesResponseData
+  files: PullsListFilesResponseData,
+  excludedFiles: string[] | null
 ): Promise<string[]> {
   // List of files with CRLF
   const errorFiles = [];
 
   for (const file of files) {
     // Check the contents for CRLF
-    if (await checkFileContentForCrlf(file.raw_url)) {
-      // Found, add to list of "bad" files
-      errorFiles.push(file.filename);
-      console.log(`File: ${file.filename} - contains CRLF`);
+    if (isFileExcluded(file.filename, excludedFiles)) {
+      core.info(`File: ${file.filename} is excluded`);
     } else {
-      console.log(`File: ${file.filename} - no CRLF`);
+      if (await checkFileContentForCrlf(file.raw_url)) {
+        // Found, add to list of "bad" files
+        errorFiles.push(file.filename);
+        core.warning(`File: ${file.filename} - contains CRLF`);
+      } else {
+        core.info(`File: ${file.filename} - no CRLF`);
+      }
     }
   }
 
@@ -56,4 +63,23 @@ git push
 \`\`\`
 
 ${UserStrings.PR_REPORT_FOOTER}`;
+}
+
+const defaultExcludeList: string[] = ['**/**.{png,jpg,jpeg,gif,bmp}'];
+
+export function isFileExcluded(
+  filePath: string,
+  excludedFilePatterns: string[] | null
+): boolean {
+  if (excludedFilePatterns === null || excludedFilePatterns.length <= 0) {
+    excludedFilePatterns = defaultExcludeList;
+  }
+
+  for (const globPattern of excludedFilePatterns) {
+    if (minimatch(filePath, globPattern)) {
+      return true;
+    }
+  }
+
+  return false;
 }

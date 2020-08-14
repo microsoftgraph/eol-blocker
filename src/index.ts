@@ -7,16 +7,24 @@ import { checkFilesForCrlf, generatePrComment } from './validation';
 async function run(): Promise<void> {
   try {
     // Should only execute for pull requests
-    if (github.context.eventName === 'pull_request') {
+    if (github.context.eventName === 'pull_request_target') {
+      const repoToken = core.getInput('repoToken', { required: true });
+      const excludedFiles = core.getInput('excludeFiles');
+
+      const excludedFilesArray = excludedFiles
+        ? excludedFiles.split(';')
+        : null;
+
+      if (excludedFilesArray) {
+        core.info(
+          `Using custom exclude patterns: ${JSON.stringify(excludedFilesArray)}`
+        );
+      }
+
       const pullPayload = github.context
         .payload as Webhooks.Webhooks.WebhookPayloadPullRequest;
 
-      if (process.env.API_TOKEN === undefined) {
-        core.setFailed('No app token available.');
-        return;
-      }
-
-      const octokit = github.getOctokit(process.env.API_TOKEN);
+      const octokit = github.getOctokit(repoToken);
 
       // Get all files in the pull request
       const files = await octokit.paginate(
@@ -29,8 +37,8 @@ async function run(): Promise<void> {
       );
 
       // List of files with CRLF
-      const errorFiles = await checkFilesForCrlf(files);
-
+      const errorFiles = await checkFilesForCrlf(files, excludedFilesArray);
+      core.info(`File check complete. ${errorFiles.length} files with CRLF.`);
       // If there are files with CRLF, build the comment
       if (errorFiles.length > 0) {
         const prComment = generatePrComment(
@@ -38,21 +46,31 @@ async function run(): Promise<void> {
           pullPayload.pull_request.head.ref
         );
 
-        // Post the comment in the pull request
-        await octokit.issues.createComment({
-          owner: github.context.repo.owner,
-          repo: github.context.repo.repo,
-          issue_number: pullPayload.pull_request.number,
-          body: prComment,
-        });
+        try {
+          // Post the comment in the pull request
+          await octokit.issues.createComment({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: pullPayload.pull_request.number,
+            body: prComment,
+          });
+        } catch (createCommentError) {
+          core.warning(
+            `Unable to create comment\n${JSON.stringify(createCommentError)}`
+          );
+        }
 
-        // Add the crlf detected label
-        await octokit.issues.addLabels({
-          owner: github.context.repo.owner,
-          repo: github.context.repo.repo,
-          issue_number: pullPayload.pull_request.number,
-          labels: ['crlf detected'],
-        });
+        try {
+          // Add the crlf detected label
+          await octokit.issues.addLabels({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: pullPayload.pull_request.number,
+            labels: ['crlf detected'],
+          });
+        } catch (addLabelError) {
+          core.warning(`Unable to add label\n${JSON.stringify(addLabelError)}`);
+        }
 
         // Indicate failure to block the pull request
         core.setFailed('Files with CRLF detected in pull request');
@@ -65,17 +83,19 @@ async function run(): Promise<void> {
             issue_number: pullPayload.pull_request.number,
             name: 'crlf detected',
           });
-        } catch (labelError) {
+        } catch (removeLabelError) {
           // If label wasn't there, this returns an error
-          if (labelError.message !== 'Label does not exist') {
-            core.setFailed(`Unexpected error: \n${labelError.message}`);
+          if (removeLabelError.message !== 'Label does not exist') {
+            core.warning(
+              `Unable to remove label\n${JSON.stringify(removeLabelError)}`
+            );
           }
         }
       }
     }
   } catch (error) {
     // General error
-    core.setFailed(`Unexpected error: \n${error.message}`);
+    core.setFailed(`Unexpected error: \n${JSON.stringify(error)}`);
   }
 }
 

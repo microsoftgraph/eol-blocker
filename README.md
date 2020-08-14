@@ -17,8 +17,7 @@ To avoid these "bad" line endings from spreading to all contributors' clones, it
     ```yml
     on:
       pull_request:
-        branches:
-          - main
+        branches: [ main ]
 
     jobs:
       check_pull_request_job:
@@ -26,10 +25,10 @@ To avoid these "bad" line endings from spreading to all contributors' clones, it
         name: Check files for CRLF
         steps:
         - name: Validate files
-          env:
-            API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            repoToken: ${{ secrets.GITHUB_TOKEN }}
           id: validate
-          uses: microsoftgraph/eol-blocker@v1.0.0
+          uses: microsoftgraph/eol-blocker@v1.0.7
     ```
 
 1. If you wish to block merges that are flagged by this action, set the **Check files for CRLF** check as a [required status check](https://docs.github.com/en/github/administering-a-repository/about-required-status-checks).

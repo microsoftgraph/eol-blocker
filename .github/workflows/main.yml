@@ -1,7 +1,8 @@
+name: EOL Blocker
+
 on:
-  pull_request:
-    branches:
-      - main
+  pull_request_target:
+    branches: [ main ]
 
 jobs:
   check_pull_request_job:
@@ -9,7 +10,7 @@ jobs:
     name: Check files for CRLF
     steps:
     - name: Validate files
-      env:
-        API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        repoToken: ${{ secrets.GITHUB_TOKEN }}
       id: validate
-      uses: microsoftgraph/eol-blocker@v1.0.0
+      uses: microsoftgraph/eol-blocker@patch-1
