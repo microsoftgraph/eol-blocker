@@ -9,6 +9,18 @@ async function run(): Promise<void> {
     // Should only execute for pull requests
     if (github.context.eventName === 'pull_request_target') {
       const repoToken = core.getInput('repoToken', { required: true });
+      const excludedFiles = core.getInput('excludeFiles');
+
+      const excludedFilesArray = excludedFiles
+        ? excludedFiles.split(';')
+        : null;
+
+      if (excludedFilesArray) {
+        core.info(
+          `Using custom exclude patterns: ${JSON.stringify(excludedFilesArray)}`
+        );
+      }
+
       const pullPayload = github.context
         .payload as Webhooks.Webhooks.WebhookPayloadPullRequest;
 
@@ -25,8 +37,8 @@ async function run(): Promise<void> {
       );
 
       // List of files with CRLF
-      const errorFiles = await checkFilesForCrlf(files);
-      console.log(`File check complete. ${errorFiles.length} files with CRLF.`);
+      const errorFiles = await checkFilesForCrlf(files, excludedFilesArray);
+      core.info(`File check complete. ${errorFiles.length} files with CRLF.`);
       // If there are files with CRLF, build the comment
       if (errorFiles.length > 0) {
         const prComment = generatePrComment(
@@ -43,7 +55,7 @@ async function run(): Promise<void> {
             body: prComment,
           });
         } catch (createCommentError) {
-          console.log(
+          core.warning(
             `Unable to create comment\n${JSON.stringify(createCommentError)}`
           );
         }
@@ -57,7 +69,7 @@ async function run(): Promise<void> {
             labels: ['crlf detected'],
           });
         } catch (addLabelError) {
-          console.log(`Unable to add label\n${JSON.stringify(addLabelError)}`);
+          core.warning(`Unable to add label\n${JSON.stringify(addLabelError)}`);
         }
 
         // Indicate failure to block the pull request
@@ -74,12 +86,9 @@ async function run(): Promise<void> {
         } catch (removeLabelError) {
           // If label wasn't there, this returns an error
           if (removeLabelError.message !== 'Label does not exist') {
-            console.log(
+            core.warning(
               `Unable to remove label\n${JSON.stringify(removeLabelError)}`
             );
-            //.setFailed(
-            //  `Unexpected label error: \n${JSON.stringify(removeLabelError)}`
-            //);
           }
         }
       }

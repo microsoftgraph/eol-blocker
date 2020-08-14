@@ -12,9 +12,7 @@ To avoid these "bad" line endings from spreading to all contributors' clones, it
 
 1. Create a label in your repository named `crlf detected`. The action will flag pull requests with bad line endings with this tag. If the tag isn't present, the action will fail.
 
-1. Create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with the `public_repo` scope. Save this token as a [repo secret](https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets) named `EOL_BLOCKER_TOKEN`.
-
-1. To install this action, create a .yml file in **.github\workflows**, with the following syntax. (See [main.yml](.github\workflows\main.yml) in this repository for an example).
+1. To install this action, create a .yml file in **.github\workflows**, with the following syntax. See [Inputs](#inputs) below for info on the inputs. (See [main.yml](.github\workflows\main.yml) in this repository for an example).
 
     ```yml
     on:
@@ -28,12 +26,20 @@ To avoid these "bad" line endings from spreading to all contributors' clones, it
         steps:
         - name: Validate files
           with:
-            repoToken: ${{ secrets.EOL_BLOCKER_TOKEN }}
+            repoToken: ${{ secrets.GITHUB_TOKEN }}
+            excludeFiles: '**/**.png;filename.txt'
           id: validate
-          uses: microsoftgraph/eol-blocker@v1.0.7
+          uses: microsoftgraph/eol-blocker@v1.0.8
     ```
 
 1. If you wish to block merges that are flagged by this action, set the **Check files for CRLF** check as a [required status check](https://docs.github.com/en/github/administering-a-repository/about-required-status-checks).
+
+## Inputs
+
+| Input          | Required? | Description                                                            |
+|----------------|-----------|------------------------------------------------------------------------|
+| `repoToken`    | Yes       | A token that allows the action read/write access to pull requests in your repository. This SHOULD be set to the default GitHub Actions token (`${{ secrets.GITHUB_TOKEN }}`, but MAY be set to a personal access token stored in a repository secret. |
+| `excludeFiles` | No        | A semicolon-delimited list of glob patterns to match files against. Any matching files will be excluded from validation. If omitted, the default pattern `**/**.{png,jpg,jpeg,gif,bmp}` is used.                                                      |
 
 ## Code of conduct
 
