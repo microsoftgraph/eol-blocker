@@ -17,9 +17,7 @@ async function run(): Promise<void> {
 
       if (excludedFilesArray) {
         core.info(
-          `Excluding files matching patterns: ${JSON.stringify(
-            excludedFilesArray
-          )}`
+          `Using custom exclude patterns: ${JSON.stringify(excludedFilesArray)}`
         );
       }
 

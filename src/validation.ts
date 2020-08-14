@@ -14,7 +14,9 @@ export async function checkFilesForCrlf(
 
   for (const file of files) {
     // Check the contents for CRLF
-    if (!isFileExcluded(file.filename, excludedFiles)) {
+    if (isFileExcluded(file.filename, excludedFiles)) {
+      core.info(`File: ${file.filename} is excluded`);
+    } else {
       if (await checkFileContentForCrlf(file.raw_url)) {
         // Found, add to list of "bad" files
         errorFiles.push(file.filename);

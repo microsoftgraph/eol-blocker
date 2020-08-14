@@ -4775,7 +4775,7 @@ function run() {
                     ? excludedFiles.split(';')
                     : null;
                 if (excludedFilesArray) {
-                    core.info(`Excluding files matching patterns: ${JSON.stringify(excludedFilesArray)}`);
+                    core.info(`Using custom exclude patterns: ${JSON.stringify(excludedFilesArray)}`);
                 }
                 const pullPayload = github.context
                     .payload;
@@ -5780,7 +5780,10 @@ function checkFilesForCrlf(files, excludedFiles) {
         const errorFiles = [];
         for (const file of files) {
             // Check the contents for CRLF
-            if (!isFileExcluded(file.filename, excludedFiles)) {
+            if (isFileExcluded(file.filename, excludedFiles)) {
+                core.info(`File: ${file.filename} is excluded`);
+            }
+            else {
                 if (yield checkFileContentForCrlf(file.raw_url)) {
                     // Found, add to list of "bad" files
                     errorFiles.push(file.filename);
