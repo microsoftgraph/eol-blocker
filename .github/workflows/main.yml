@@ -12,5 +12,6 @@ jobs:
     - name: Validate files
       with:
         repoToken: ${{ secrets.GITHUB_TOKEN }}
+        excludeFiles: '**/**.map;package.json'
       id: validate
-      uses: microsoftgraph/eol-blocker@patch-1
+      uses: microsoftgraph/eol-blocker@test
