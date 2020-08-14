@@ -4,6 +4,9 @@ inputs:
   repoToken:
     description: 'Token for the repository.'
     required: true
+  excludeFiles:
+    description: 'Custom exclusion list. Semi-colon delimited list of glob patterns.'
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
