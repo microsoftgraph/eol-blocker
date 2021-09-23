@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import * as Webhooks from '@octokit/webhooks';
+import { PullRequestEvent } from '@octokit/webhooks-definitions/schema';
+import { PullListFile } from './types';
 
 import { checkFilesForCrlf, generatePrComment } from './validation';
 
@@ -21,8 +22,7 @@ async function run(): Promise<void> {
         );
       }
 
-      const pullPayload = github.context
-        .payload as Webhooks.Webhooks.WebhookPayloadPullRequest;
+      const pullPayload = github.context.payload as PullRequestEvent;
 
       const octokit = github.getOctokit(repoToken);
 
@@ -37,7 +37,10 @@ async function run(): Promise<void> {
       );
 
       // List of files with CRLF
-      const errorFiles = await checkFilesForCrlf(files, excludedFilesArray);
+      const errorFiles = await checkFilesForCrlf(
+        files as PullListFile[],
+        excludedFilesArray
+      );
       core.info(`File check complete. ${errorFiles.length} files with CRLF.`);
       // If there are files with CRLF, build the comment
       if (errorFiles.length > 0) {
@@ -48,7 +51,7 @@ async function run(): Promise<void> {
 
         try {
           // Post the comment in the pull request
-          await octokit.issues.createComment({
+          await octokit.rest.issues.createComment({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             issue_number: pullPayload.pull_request.number,
@@ -62,7 +65,7 @@ async function run(): Promise<void> {
 
         try {
           // Add the crlf detected label
-          await octokit.issues.addLabels({
+          await octokit.rest.issues.addLabels({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             issue_number: pullPayload.pull_request.number,
@@ -77,7 +80,7 @@ async function run(): Promise<void> {
       } else {
         // No CRLF detected, remove the crlf detected label if present
         try {
-          await octokit.issues.removeLabel({
+          await octokit.rest.issues.removeLabel({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             issue_number: pullPayload.pull_request.number,
@@ -85,7 +88,8 @@ async function run(): Promise<void> {
           });
         } catch (removeLabelError) {
           // If label wasn't there, this returns an error
-          if (removeLabelError.message !== 'Label does not exist') {
+          const error = removeLabelError as Error;
+          if (error.message !== 'Label does not exist') {
             core.warning(
               `Unable to remove label\n${JSON.stringify(removeLabelError)}`
             );
