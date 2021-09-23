@@ -2,11 +2,10 @@ import * as core from '@actions/core';
 import fetch from 'node-fetch';
 import * as UserStrings from './strings';
 import minimatch = require('minimatch');
-
-import { PullsListFilesResponseData } from '@octokit/types/dist-types';
+import { PullListFile } from './types';
 
 export async function checkFilesForCrlf(
-  files: PullsListFilesResponseData,
+  files: PullListFile[],
   excludedFiles: string[] | null
 ): Promise<string[]> {
   // List of files with CRLF
