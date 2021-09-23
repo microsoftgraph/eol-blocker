@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 import nock from 'nock';
-import { PullsListFilesResponseData } from '@octokit/types/dist-types';
+import { PullListFile } from '../src/types';
 
 import {
   checkFileContentForCrlf,
@@ -81,12 +81,12 @@ test('File with mixed line endings is detected properly', async () => {
   ).toBeTruthy();
 });
 
-const files: PullsListFilesResponseData = [
+const files: PullListFile[] = [
   {
     filename: 'file1.md',
     raw_url: 'https://github.com/file1.md',
     sha: '',
-    status: '',
+    status: 'added',
     additions: 0,
     deletions: 0,
     changes: 0,
@@ -98,7 +98,7 @@ const files: PullsListFilesResponseData = [
     filename: 'file2.md',
     raw_url: 'https://github.com/file2.md',
     sha: '',
-    status: '',
+    status: 'added',
     additions: 0,
     deletions: 0,
     changes: 0,
@@ -110,7 +110,7 @@ const files: PullsListFilesResponseData = [
     filename: 'file3.md',
     raw_url: 'https://github.com/file3.md',
     sha: '',
-    status: '',
+    status: 'added',
     additions: 0,
     deletions: 0,
     changes: 0,

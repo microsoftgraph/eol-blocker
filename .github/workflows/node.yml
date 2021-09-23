@@ -2,7 +2,7 @@ name: Node.js CI
 
 on:
   pull_request:
-    branches: release
+    branches: [ release ]
 
 jobs:
   build:
@@ -14,8 +14,6 @@ jobs:
     - name: Verify npm all runs and build output matches
       uses: actions/setup-node@v1
       with:
-        node-version: '12'
+        node-version: '14'
     - run: npm ci
     - run: npm run all
-    - name: Verify no unstaged changes
-      run: test/verify-no-unstaged-changes.sh
