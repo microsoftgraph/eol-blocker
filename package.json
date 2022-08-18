@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/microsoftgraph/eol-blocker#readme",
   "dependencies": {
-    "@actions/core": "^1.5.0",
+    "@actions/core": "^1.9.1",
     "@actions/github": "^5.0.0",
     "@types/node-fetch": "^2.5.12",
     "minimatch": "^3.0.4",
