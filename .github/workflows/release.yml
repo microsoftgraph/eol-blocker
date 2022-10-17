@@ -8,21 +8,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
     - name: Bump version and push tag
       id: version
-      uses: anothrNick/github-tag-action@1.22.0
+      uses: anothrNick/github-tag-action@1.52.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         WITH_V: true
         DEFAULT_BUMP: patch
         RELEASE_BRANCHES: release
     - name: Create release
-      uses: actions/create-release@v1
+      uses: ncipollo/release-action@v1.11.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.version.outputs.new_tag }}
-        release_name: 'Release ${{ steps.version.outputs.new_tag }}'
+        tag: ${{ steps.version.outputs.new_tag }}
+        name: 'Release ${{ steps.version.outputs.new_tag }}'
