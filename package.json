@@ -32,7 +32,7 @@
     "@octokit/openapi-types": "^14.0.0",
     "@octokit/webhooks-types": "^6.10.0",
     "@types/minimatch": "^5.1.2",
-    "@typescript-eslint/eslint-plugin": "^5.52.0",
+    "@typescript-eslint/eslint-plugin": "^5.55.0",
     "@typescript-eslint/parser": "^5.54.1",
     "eslint": "^8.34.0",
     "eslint-config-prettier": "^8.6.0",
