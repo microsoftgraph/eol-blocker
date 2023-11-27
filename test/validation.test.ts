@@ -1,6 +1,9 @@
 import { expect, test } from '@jest/globals';
-import nock from 'nock';
-import { PullListFile } from '../src/types';
+import fetchMock from 'fetch-mock';
+import { Octokit } from '@octokit/core';
+import { restEndpointMethods } from '@octokit/plugin-rest-endpoint-methods';
+import { paginateRest } from '@octokit/plugin-paginate-rest';
+import { FileContents, PullListFile } from '../src/types';
 
 import {
   checkFileContentForCrlf,
@@ -8,6 +11,8 @@ import {
   generatePrComment,
   isFileExcluded,
 } from '../src/validation';
+
+const MyOctokit = Octokit.plugin(restEndpointMethods).plugin(paginateRest);
 
 const errorFiles = ['test.md', 'subfolder/test2.md'];
 const head = 'patch-1';
@@ -44,40 +49,98 @@ const lfFileContents = 'This file has\nUnix-style line-endings.\n';
 const mixedFileContents =
   'This file has both\nWindows-style and \r\nUnix-style line endings.\r\n';
 
+const contentsEndpoint = 'https://api.github.com/repos/owner/repo/contents/';
+
+function mockFile(filePath: string): PullListFile {
+  return {
+    sha: '',
+    filename: filePath,
+    status: 'added',
+    additions: 0,
+    deletions: 0,
+    changes: 0,
+    blob_url: '',
+    raw_url: '',
+    contents_url: `${contentsEndpoint}${filePath}`,
+  };
+}
+
+function mockFileContentResponse(contents: string): FileContents {
+  return {
+    type: 'file',
+    name: '',
+    path: '',
+    sha: '',
+    size: 0,
+    url: '',
+    html_url: '',
+    git_url: '',
+    download_url: '',
+    encoding: 'base64',
+    content: Buffer.from(contents).toString('base64'),
+    _links: {
+      self: '',
+      git: '',
+      html: '',
+    },
+  };
+}
+
 test('File with CRLF is detected properly', async () => {
-  nock('https://github.com')
-    .replyContentLength()
-    .get('/crlf.md')
-    .reply(200, crlfFileContents, {
-      'Content-Type': 'text/plain; charset=utf-8',
-    });
+  const mock = fetchMock.sandbox().getOnce(contentsEndpoint + 'crlf.md', {
+    body: mockFileContentResponse(crlfFileContents),
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+  });
+
+  const octokit = new MyOctokit({
+    request: {
+      fetch: mock,
+    },
+  });
 
   expect(
-    await checkFileContentForCrlf('https://github.com/crlf.md')
+    await checkFileContentForCrlf(octokit, mockFile('crlf.md')),
   ).toBeTruthy();
 });
 
 test('File without CRLF is detected properly', async () => {
-  nock('https://github.com')
-    .replyContentLength()
-    .get('/lf.md')
-    .reply(200, lfFileContents, {
-      'Content-Type': 'text/plain; charset=utf-8',
-    });
+  const mock = fetchMock.sandbox().getOnce(contentsEndpoint + 'lf.md', {
+    body: mockFileContentResponse(lfFileContents),
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+  });
 
-  expect(await checkFileContentForCrlf('https://github.com/lf.md')).toBeFalsy();
+  const octokit = new MyOctokit({
+    request: {
+      fetch: mock,
+    },
+  });
+
+  expect(await checkFileContentForCrlf(octokit, mockFile('lf.md'))).toBeFalsy();
 });
 
 test('File with mixed line endings is detected properly', async () => {
-  nock('https://github.com')
-    .replyContentLength()
-    .get('/mixed.md')
-    .reply(200, mixedFileContents, {
-      'Content-Type': 'text/plain; charset=utf-8',
-    });
+  const mock = fetchMock.sandbox().getOnce(contentsEndpoint + 'mixed.md', {
+    body: mockFileContentResponse(mixedFileContents),
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+  });
+
+  const octokit = new MyOctokit({
+    request: {
+      fetch: mock,
+    },
+  });
 
   expect(
-    await checkFileContentForCrlf('https://github.com/mixed.md')
+    await checkFileContentForCrlf(octokit, mockFile('mixed.md')),
   ).toBeTruthy();
 });
 
@@ -91,7 +154,7 @@ const files: PullListFile[] = [
     deletions: 0,
     changes: 0,
     blob_url: '',
-    contents_url: '',
+    contents_url: 'https://api.github.com/repos/owner/repo/contents/file1.md',
     patch: '',
   },
   {
@@ -103,7 +166,7 @@ const files: PullListFile[] = [
     deletions: 0,
     changes: 0,
     blob_url: '',
-    contents_url: '',
+    contents_url: 'https://api.github.com/repos/owner/repo/contents/file2.md',
     patch: '',
   },
   {
@@ -115,41 +178,77 @@ const files: PullListFile[] = [
     deletions: 0,
     changes: 0,
     blob_url: '',
-    contents_url: '',
+    contents_url: 'https://api.github.com/repos/owner/repo/contents/file3.md',
     patch: '',
   },
 ];
 
 test('PR with CRLF files is detected properly', async () => {
-  nock('https://github.com')
-    .replyContentLength()
-    .get('/file1.md')
-    .reply(200, crlfFileContents, {
-      'Content-Type': 'text/plain; charset=utf-8',
+  const mock = fetchMock
+    .sandbox()
+    .getOnce(contentsEndpoint + 'file1.md', {
+      body: mockFileContentResponse(crlfFileContents),
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
     })
-    .get('/file2.md')
-    .reply(200, lfFileContents, { 'Content-Type': 'text/plain; charset=utf-8' })
-    .get('/file3.md')
-    .reply(200, mixedFileContents, {
-      'Content-Type': 'text/plain; charset=utf-8',
+    .getOnce(contentsEndpoint + 'file2.md', {
+      body: mockFileContentResponse(lfFileContents),
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    })
+    .getOnce(contentsEndpoint + 'file3.md', {
+      body: mockFileContentResponse(mixedFileContents),
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
     });
 
-  expect(await checkFilesForCrlf(files, null)).toHaveLength(2);
+  const octokit = new MyOctokit({
+    request: {
+      fetch: mock,
+    },
+  });
+
+  expect(await checkFilesForCrlf(octokit, files, null)).toHaveLength(2);
 });
 
 test('PR without CRLF files is detected properly', async () => {
-  nock('https://github.com')
-    .replyContentLength()
-    .get('/file1.md')
-    .reply(200, lfFileContents, { 'Content-Type': 'text/plain; charset=utf-8' })
-    .get('/file2.md')
-    .reply(200, lfFileContents, { 'Content-Type': 'text/plain; charset=utf-8' })
-    .get('/file3.md')
-    .reply(200, lfFileContents, {
-      'Content-Type': 'text/plain; charset=utf-8',
+  const mock = fetchMock
+    .sandbox()
+    .getOnce(contentsEndpoint + 'file1.md', {
+      body: mockFileContentResponse(lfFileContents),
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    })
+    .getOnce(contentsEndpoint + 'file2.md', {
+      body: mockFileContentResponse(lfFileContents),
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    })
+    .getOnce(contentsEndpoint + 'file3.md', {
+      body: mockFileContentResponse(lfFileContents),
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
     });
 
-  expect(await checkFilesForCrlf(files, null)).toHaveLength(0);
+  const octokit = new MyOctokit({
+    request: {
+      fetch: mock,
+    },
+  });
+
+  expect(await checkFilesForCrlf(octokit, files, null)).toHaveLength(0);
 });
 
 const fileList = [
