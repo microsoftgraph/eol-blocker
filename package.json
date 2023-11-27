@@ -25,7 +25,7 @@
     "@actions/github": "^6.0.0",
     "@types/node-fetch": "^2.6.9",
     "@vercel/ncc": "^0.36.1",
-    "minimatch": "^5.1.6"
+    "minimatch": "^9.0.3"
   },
   "devDependencies": {
     "@octokit/openapi-types": "^19.0.2",
