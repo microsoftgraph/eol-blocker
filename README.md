@@ -16,7 +16,7 @@ To avoid these "bad" line endings from spreading to all contributors' clones, it
 
     ```yml
     on:
-      pull_request:
+      pull_request_target:
         branches: [ main ]
 
     jobs:
@@ -29,7 +29,7 @@ To avoid these "bad" line endings from spreading to all contributors' clones, it
             repoToken: ${{ secrets.GITHUB_TOKEN }}
             excludeFiles: '**/**.png;filename.txt'
           id: validate
-          uses: microsoftgraph/eol-blocker@v1.0.8
+          uses: microsoftgraph/eol-blocker@v1
     ```
 
 1. If you wish to block merges that are flagged by this action, set the **Check files for CRLF** check as a [required status check](https://docs.github.com/en/github/administering-a-repository/about-required-status-checks).
@@ -38,7 +38,7 @@ To avoid these "bad" line endings from spreading to all contributors' clones, it
 
 | Input          | Required? | Description                                                            |
 |----------------|-----------|------------------------------------------------------------------------|
-| `repoToken`    | Yes       | A token that allows the action read/write access to pull requests in your repository. This SHOULD be set to the default GitHub Actions token (`${{ secrets.GITHUB_TOKEN }}`, but MAY be set to a personal access token stored in a repository secret. |
+| `repoToken`    | Yes       | A token that allows the action read/write access to pull requests in your repository. This SHOULD be set to the default GitHub Actions token (`${{ secrets.GITHUB_TOKEN }}`), but MAY be set to a personal access token stored in a repository secret. |
 | `excludeFiles` | No        | A semicolon-delimited list of glob patterns to match files against. Any matching files will be excluded from validation. If omitted, the default pattern `**/**.{png,jpg,jpeg,gif,bmp}` is used.                                                      |
 
 ## Code of conduct

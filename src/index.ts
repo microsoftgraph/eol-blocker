@@ -18,7 +18,9 @@ async function run(): Promise<void> {
 
       if (excludedFilesArray) {
         core.info(
-          `Using custom exclude patterns: ${JSON.stringify(excludedFilesArray)}`
+          `Using custom exclude patterns: ${JSON.stringify(
+            excludedFilesArray,
+          )}`,
         );
       }
 
@@ -33,20 +35,21 @@ async function run(): Promise<void> {
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
           pull_number: pullPayload.pull_request.number,
-        }
+        },
       );
 
       // List of files with CRLF
       const errorFiles = await checkFilesForCrlf(
+        octokit,
         files as PullListFile[],
-        excludedFilesArray
+        excludedFilesArray,
       );
       core.info(`File check complete. ${errorFiles.length} files with CRLF.`);
       // If there are files with CRLF, build the comment
       if (errorFiles.length > 0) {
         const prComment = generatePrComment(
           errorFiles,
-          pullPayload.pull_request.head.ref
+          pullPayload.pull_request.head.ref,
         );
 
         try {
@@ -59,7 +62,7 @@ async function run(): Promise<void> {
           });
         } catch (createCommentError) {
           core.warning(
-            `Unable to create comment\n${JSON.stringify(createCommentError)}`
+            `Unable to create comment\n${JSON.stringify(createCommentError)}`,
           );
         }
 
@@ -91,7 +94,7 @@ async function run(): Promise<void> {
           const error = removeLabelError as Error;
           if (error.message !== 'Label does not exist') {
             core.warning(
-              `Unable to remove label\n${JSON.stringify(removeLabelError)}`
+              `Unable to remove label\n${JSON.stringify(removeLabelError)}`,
             );
           }
         }
