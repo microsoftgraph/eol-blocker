@@ -1,12 +1,13 @@
 import * as core from '@actions/core';
-import fetch from 'node-fetch';
+import { GitHub } from '@actions/github/lib/utils';
 import * as UserStrings from './strings';
-import minimatch = require('minimatch');
-import { PullListFile } from './types';
+import { minimatch } from 'minimatch';
+import { FileContents, PullListFile } from './types';
 
 export async function checkFilesForCrlf(
+  octokit: InstanceType<typeof GitHub>,
   files: PullListFile[],
-  excludedFiles: string[] | null
+  excludedFiles: string[] | null,
 ): Promise<string[]> {
   // List of files with CRLF
   const errorFiles = [];
@@ -16,7 +17,7 @@ export async function checkFilesForCrlf(
     if (isFileExcluded(file.filename, excludedFiles)) {
       core.info(`File: ${file.filename} is excluded`);
     } else {
-      if (await checkFileContentForCrlf(file.raw_url)) {
+      if (await checkFileContentForCrlf(octokit, file)) {
         // Found, add to list of "bad" files
         errorFiles.push(file.filename);
         core.warning(`File: ${file.filename} - contains CRLF`);
@@ -30,13 +31,15 @@ export async function checkFilesForCrlf(
 }
 
 export async function checkFileContentForCrlf(
-  fileUrl: string
+  octokit: InstanceType<typeof GitHub>,
+  file: PullListFile,
 ): Promise<boolean> {
   // Get the file's raw contents. This is important as
   // we need to see the data at rest on the server, not transformed
   // by git
-  const response = await fetch(fileUrl);
-  const content = await response.text();
+  const response = await octokit.request(file.contents_url);
+  const fileContents = response.data as FileContents;
+  const content = Buffer.from(fileContents.content, 'base64').toString('utf-8');
 
   return /\r\n/g.test(content);
 }
@@ -68,7 +71,7 @@ const defaultExcludeList: string[] = ['**/**.{png,jpg,jpeg,gif,bmp}'];
 
 export function isFileExcluded(
   filePath: string,
-  excludedFilePatterns: string[] | null
+  excludedFilePatterns: string[] | null,
 ): boolean {
   if (excludedFilePatterns === null || excludedFilePatterns.length <= 0) {
     excludedFilePatterns = defaultExcludeList;
