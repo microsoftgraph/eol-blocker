@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import { GitHub } from '@actions/github/lib/utils';
 import * as UserStrings from './strings';
-import minimatch = require('minimatch');
+import { minimatch } from 'minimatch';
 import { FileContents, PullListFile } from './types';
 
 export async function checkFilesForCrlf(
