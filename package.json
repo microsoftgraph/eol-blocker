@@ -28,7 +28,7 @@
     "minimatch": "^9.0.3"
   },
   "devDependencies": {
-    "@octokit/openapi-types": "^19.0.2",
+    "@octokit/openapi-types": "^19.1.0",
     "@octokit/webhooks-types": "^7.3.1",
     "@types/minimatch": "^5.1.2",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
