@@ -8,5 +8,5 @@ inputs:
     description: 'Custom exclusion list. Semi-colon delimited list of glob patterns.'
     required: false
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
