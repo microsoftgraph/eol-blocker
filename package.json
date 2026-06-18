@@ -24,7 +24,7 @@
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
     "@vercel/ncc": "^0.38.3",
-    "minimatch": "^9.0.5",
+    "minimatch": "^10.2.5",
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
