@@ -202,6 +202,24 @@ test('PR with CRLF files is detected properly', async () => {
   expect(await checkFilesForCrlf(octokit, files, null)).toHaveLength(2);
 });
 
+test('Excluded files are skipped during CRLF check', async () => {
+  const mockFetch = createMockFetch({
+    // file1.md has CRLF but should be excluded
+    'file1.md': mockFileContentResponse(crlfFileContents),
+    'file2.md': mockFileContentResponse(lfFileContents),
+    'file3.md': mockFileContentResponse(mixedFileContents),
+  });
+
+  const octokit = new MyOctokit({
+    request: { fetch: mockFetch },
+  });
+
+  // Exclude file1.md — only file3.md (mixed) should be flagged
+  const result = await checkFilesForCrlf(octokit, files, ['**/file1.md']);
+  expect(result).toHaveLength(1);
+  expect(result[0]).toBe('file3.md');
+});
+
 test('PR without CRLF files is detected properly', async () => {
   const mockFetch = createMockFetch({
     'file1.md': mockFileContentResponse(lfFileContents),
@@ -251,13 +269,14 @@ const fileList = [
 
 test('Files are correctly excluded with default exclude list', () => {
   fileList.forEach((filename) => {
-    // Is this an image?
+    // Case-insensitive matching: check against lowercased extension
+    const lowerName = filename.toLowerCase();
     const isImage =
-      filename.indexOf('.png') > 0 ||
-      filename.indexOf('.jpg') > 0 ||
-      filename.indexOf('.jpeg') > 0 ||
-      filename.indexOf('.gif') > 0 ||
-      filename.indexOf('.bmp') > 0;
+      lowerName.indexOf('.png') > 0 ||
+      lowerName.indexOf('.jpg') > 0 ||
+      lowerName.indexOf('.jpeg') > 0 ||
+      lowerName.indexOf('.gif') > 0 ||
+      lowerName.indexOf('.bmp') > 0;
 
     expect(isFileExcluded(filename, null)).toBe(isImage);
   });
@@ -267,9 +286,58 @@ const excludePatterns = ['**/**.png', '**/**.gif'];
 
 test('Files are correctly excluded with custom exclude list', () => {
   fileList.forEach((filename) => {
+    const lowerName = filename.toLowerCase();
     const expectedResult =
-      filename.indexOf('.png') > 0 || filename.indexOf('.gif') > 0;
+      lowerName.indexOf('.png') > 0 || lowerName.indexOf('.gif') > 0;
 
     expect(isFileExcluded(filename, excludePatterns)).toBe(expectedResult);
   });
+});
+
+test('Empty exclude array falls back to default exclude list', () => {
+  // images should be excluded by the default list
+  expect(isFileExcluded('concepts/images/todo-api-entities.png', [])).toBe(
+    true,
+  );
+  expect(isFileExcluded('images/image.jpg', [])).toBe(true);
+  // non-images should not be excluded
+  expect(isFileExcluded('README.md', [])).toBe(false);
+});
+
+test('Empty file list returns no errors', async () => {
+  const mockFetch = createMockFetch({});
+  const octokit = new MyOctokit({
+    request: { fetch: mockFetch },
+  });
+
+  expect(await checkFilesForCrlf(octokit, [], null)).toHaveLength(0);
+});
+
+test('PR comment generates correctly for a single file', () => {
+  const comment = generatePrComment(['only-file.md'], 'fix-branch');
+  expect(comment).toContain('- only-file.md');
+  expect(comment).toContain('git rm --cached only-file.md');
+  expect(comment).toContain('git add only-file.md');
+  expect(comment).toContain('git checkout fix-branch');
+});
+
+test('File with bare CR (old Mac-style) is not flagged', async () => {
+  const crOnlyContents = 'This file has\rold Mac-style line-endings.\r';
+  const mockFetch = createMockFetch({
+    'cr-only.md': mockFileContentResponse(crOnlyContents),
+  });
+
+  const octokit = new MyOctokit({
+    request: { fetch: mockFetch },
+  });
+
+  expect(
+    await checkFileContentForCrlf(octokit, mockFile('cr-only.md')),
+  ).toBeFalsy();
+});
+
+test('Uppercase image extension is excluded by default pattern', () => {
+  // The default glob patterns are lowercase; minimatch is case-sensitive
+  expect(isFileExcluded('image.PNG', null)).toBe(true);
+  expect(isFileExcluded('photo.JPG', null)).toBe(true);
 });

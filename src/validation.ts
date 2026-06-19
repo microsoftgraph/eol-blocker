@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+// cSpell:ignore nocase
+
 import * as core from '@actions/core';
 import { GitHub } from '@actions/github/lib/utils';
 import * as UserStrings from './strings.js';
@@ -81,7 +83,7 @@ export function isFileExcluded(
   }
 
   for (const globPattern of excludedFilePatterns) {
-    if (minimatch(filePath, globPattern)) {
+    if (minimatch(filePath, globPattern, { nocase: true })) {
       return true;
     }
   }
