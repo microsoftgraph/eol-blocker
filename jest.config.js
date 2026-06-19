@@ -3,7 +3,7 @@
 
 import { defineConfig } from 'jest';
 
-module.exports = defineConfig({
+export default defineConfig({
   clearMocks: true,
   extensionsToTreatAsEsm: ['.ts'],
   moduleFileExtensions: ['js', 'ts'],

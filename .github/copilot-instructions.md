@@ -49,5 +49,5 @@ After making changes, run `npm run package` and commit the updated `dist/` direc
   ```
   This is enforced by ESLint (`@tony.ganchev/eslint-plugin-header`).
 - **Prettier** — Single quotes, auto line endings. Integrated via ESLint.
-- **Tests** — Jest with `ts-jest` in ESM mode. Tests live in `test/` and use `fetch-mock` to mock Octokit HTTP calls. Test files match `**/*.test.ts`.
+- **Tests** — Jest with `ts-jest` in ESM mode. Tests live in `test/` and mock Octokit HTTP calls by injecting a `jest.fn()` via Octokit's `request: { fetch }` option with native `Response` objects. Test files match `**/*.test.ts`.
 - **Unused variables** — Prefix with `_` (enforced by `@typescript-eslint/no-unused-vars`).

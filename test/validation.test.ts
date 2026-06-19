@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { expect, test } from '@jest/globals';
-import fetchMock from 'fetch-mock';
+import { jest, expect, test } from '@jest/globals';
 import { Octokit } from '@octokit/core';
 import { restEndpointMethods } from '@octokit/plugin-rest-endpoint-methods';
 import { paginateRest } from '@octokit/plugin-paginate-rest';
@@ -16,6 +15,27 @@ import {
 } from '../src/validation';
 
 const MyOctokit = Octokit.plugin(restEndpointMethods).plugin(paginateRest);
+
+function createMockFetch(
+  urlResponses: Record<string, FileContents>,
+): typeof fetch {
+  const mockFn = jest.fn<typeof fetch>((input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    const match = Object.entries(urlResponses).find(([key]) =>
+      url.includes(key),
+    );
+    if (!match) {
+      return Promise.resolve(new Response('Not Found', { status: 404 }));
+    }
+    return Promise.resolve(
+      new Response(JSON.stringify(match[1]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      }),
+    );
+  });
+  return mockFn as unknown as typeof fetch;
+}
 
 const errorFiles = ['test.md', 'subfolder/test2.md'];
 const head = 'patch-1';
@@ -90,18 +110,12 @@ function mockFileContentResponse(contents: string): FileContents {
 }
 
 test('File with CRLF is detected properly', async () => {
-  const mock = fetchMock.sandbox().getOnce(contentsEndpoint + 'crlf.md', {
-    body: mockFileContentResponse(crlfFileContents),
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-    },
+  const mockFetch = createMockFetch({
+    'crlf.md': mockFileContentResponse(crlfFileContents),
   });
 
   const octokit = new MyOctokit({
-    request: {
-      fetch: mock,
-    },
+    request: { fetch: mockFetch },
   });
 
   expect(
@@ -110,36 +124,24 @@ test('File with CRLF is detected properly', async () => {
 });
 
 test('File without CRLF is detected properly', async () => {
-  const mock = fetchMock.sandbox().getOnce(contentsEndpoint + 'lf.md', {
-    body: mockFileContentResponse(lfFileContents),
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-    },
+  const mockFetch = createMockFetch({
+    'lf.md': mockFileContentResponse(lfFileContents),
   });
 
   const octokit = new MyOctokit({
-    request: {
-      fetch: mock,
-    },
+    request: { fetch: mockFetch },
   });
 
   expect(await checkFileContentForCrlf(octokit, mockFile('lf.md'))).toBeFalsy();
 });
 
 test('File with mixed line endings is detected properly', async () => {
-  const mock = fetchMock.sandbox().getOnce(contentsEndpoint + 'mixed.md', {
-    body: mockFileContentResponse(mixedFileContents),
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-    },
+  const mockFetch = createMockFetch({
+    'mixed.md': mockFileContentResponse(mixedFileContents),
   });
 
   const octokit = new MyOctokit({
-    request: {
-      fetch: mock,
-    },
+    request: { fetch: mockFetch },
   });
 
   expect(
@@ -187,86 +189,46 @@ const files: PullListFile[] = [
 ];
 
 test('PR with CRLF files is detected properly', async () => {
-  const mock = fetchMock
-    .sandbox()
-    .getOnce(contentsEndpoint + 'file1.md', {
-      body: mockFileContentResponse(crlfFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    })
-    .getOnce(contentsEndpoint + 'file2.md', {
-      body: mockFileContentResponse(lfFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    })
-    .getOnce(contentsEndpoint + 'file3.md', {
-      body: mockFileContentResponse(mixedFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    });
+  const mockFetch = createMockFetch({
+    'file1.md': mockFileContentResponse(crlfFileContents),
+    'file2.md': mockFileContentResponse(lfFileContents),
+    'file3.md': mockFileContentResponse(mixedFileContents),
+  });
 
   const octokit = new MyOctokit({
-    request: {
-      fetch: mock,
-    },
+    request: { fetch: mockFetch },
   });
 
   expect(await checkFilesForCrlf(octokit, files, null)).toHaveLength(2);
 });
 
 test('PR without CRLF files is detected properly', async () => {
-  const mock = fetchMock
-    .sandbox()
-    .getOnce(contentsEndpoint + 'file1.md', {
-      body: mockFileContentResponse(lfFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    })
-    .getOnce(contentsEndpoint + 'file2.md', {
-      body: mockFileContentResponse(lfFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    })
-    .getOnce(contentsEndpoint + 'file3.md', {
-      body: mockFileContentResponse(lfFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    });
+  const mockFetch = createMockFetch({
+    'file1.md': mockFileContentResponse(lfFileContents),
+    'file2.md': mockFileContentResponse(lfFileContents),
+    'file3.md': mockFileContentResponse(lfFileContents),
+  });
 
   const octokit = new MyOctokit({
-    request: {
-      fetch: mock,
-    },
+    request: { fetch: mockFetch },
   });
 
   expect(await checkFilesForCrlf(octokit, files, null)).toHaveLength(0);
 });
 
 const fileList = [
-  'api-reference/beta/api/linkedresource-delete.md',
-  'api-reference/beta/api/linkedresource-get.md',
-  'api-reference/beta/api/linkedresource-update.md',
-  'api-reference/beta/api/opentypeextension-delete.md',
-  'api-reference/beta/api/opentypeextension-get.md',
-  'api-reference/beta/api/opentypeextension-post-opentypeextension.md',
-  'api-reference/beta/api/opentypeextension-update.md',
+  'api-reference/beta/api/linked-resource-delete.md',
+  'api-reference/beta/api/linked-resource-get.md',
+  'api-reference/beta/api/linked-resource-update.md',
+  'api-reference/beta/api/open-type-extension-delete.md',
+  'api-reference/beta/api/open-type-extension-get.md',
+  'api-reference/beta/api/open-type-extension-post-open-type-extension.md',
+  'api-reference/beta/api/open-type-extension-update.md',
   'api-reference/beta/api/todo-list-lists.md',
   'api-reference/beta/api/todo-post-lists.md',
   'api-reference/beta/resources/enums.md',
-  'api-reference/beta/resources/linkedresource.md',
-  'api-reference/beta/resources/opentypeextension.md',
+  'api-reference/beta/resources/linked-resource.md',
+  'api-reference/beta/resources/open-type-extension.md',
   'api-reference/beta/resources/todo-overview.md',
   'api-reference/beta/resources/todo.md',
   'api-reference/beta/resources/user.md',
