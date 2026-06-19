@@ -1,8 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as core from '@actions/core';
 import { GitHub } from '@actions/github/lib/utils';
-import * as UserStrings from './strings';
+import * as UserStrings from './strings.js';
 import { minimatch } from 'minimatch';
-import { FileContents, PullListFile } from './types';
+import { FileContents, PullListFile } from './types.js';
 
 export async function checkFilesForCrlf(
   octokit: InstanceType<typeof GitHub>,
