@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 export const PR_REPORT_HEADER = `## EOL Blocker Validation Failed
 
 The following files in this pull request have Windows-style line endings:
