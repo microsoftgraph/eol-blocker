@@ -35633,6 +35633,7 @@ minimatch.unescape = unescape;
 
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+// cSpell:ignore nocase
 async function checkFilesForCrlf(octokit, files, excludedFiles) {
     // List of files with CRLF
     const errorFiles = [];
@@ -35689,7 +35690,7 @@ function isFileExcluded(filePath, excludedFilePatterns) {
         excludedFilePatterns = defaultExcludeList;
     }
     for (const globPattern of excludedFilePatterns) {
-        if (minimatch(filePath, globPattern)) {
+        if (minimatch(filePath, globPattern, { nocase: true })) {
             return true;
         }
     }
