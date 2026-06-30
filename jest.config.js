@@ -1,10 +1,24 @@
-module.exports = {
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import { defineConfig } from 'jest';
+
+export default defineConfig({
   clearMocks: true,
+  extensionsToTreatAsEsm: ['.ts'],
   moduleFileExtensions: ['js', 'ts'],
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
   transform: {
-    '^.+\\.ts$': 'ts-jest'
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        tsconfig: 'tsconfig.json',
+        useESM: true,
+      },
+    ],
   },
-  verbose: true
-}
+  preset: 'ts-jest',
+  resolver: 'ts-jest-resolver',
+  verbose: true,
+});
