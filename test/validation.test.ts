@@ -1,5 +1,7 @@
-import { expect, test } from '@jest/globals';
-import fetchMock from 'fetch-mock';
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import { jest, expect, test } from '@jest/globals';
 import { Octokit } from '@octokit/core';
 import { restEndpointMethods } from '@octokit/plugin-rest-endpoint-methods';
 import { paginateRest } from '@octokit/plugin-paginate-rest';
@@ -13,6 +15,27 @@ import {
 } from '../src/validation';
 
 const MyOctokit = Octokit.plugin(restEndpointMethods).plugin(paginateRest);
+
+function createMockFetch(
+  urlResponses: Record<string, FileContents>,
+): typeof fetch {
+  const mockFn = jest.fn<typeof fetch>((input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    const match = Object.entries(urlResponses).find(([key]) =>
+      url.includes(key),
+    );
+    if (!match) {
+      return Promise.resolve(new Response('Not Found', { status: 404 }));
+    }
+    return Promise.resolve(
+      new Response(JSON.stringify(match[1]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      }),
+    );
+  });
+  return mockFn as unknown as typeof fetch;
+}
 
 const errorFiles = ['test.md', 'subfolder/test2.md'];
 const head = 'patch-1';
@@ -87,18 +110,12 @@ function mockFileContentResponse(contents: string): FileContents {
 }
 
 test('File with CRLF is detected properly', async () => {
-  const mock = fetchMock.sandbox().getOnce(contentsEndpoint + 'crlf.md', {
-    body: mockFileContentResponse(crlfFileContents),
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-    },
+  const mockFetch = createMockFetch({
+    'crlf.md': mockFileContentResponse(crlfFileContents),
   });
 
   const octokit = new MyOctokit({
-    request: {
-      fetch: mock,
-    },
+    request: { fetch: mockFetch },
   });
 
   expect(
@@ -107,36 +124,24 @@ test('File with CRLF is detected properly', async () => {
 });
 
 test('File without CRLF is detected properly', async () => {
-  const mock = fetchMock.sandbox().getOnce(contentsEndpoint + 'lf.md', {
-    body: mockFileContentResponse(lfFileContents),
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-    },
+  const mockFetch = createMockFetch({
+    'lf.md': mockFileContentResponse(lfFileContents),
   });
 
   const octokit = new MyOctokit({
-    request: {
-      fetch: mock,
-    },
+    request: { fetch: mockFetch },
   });
 
   expect(await checkFileContentForCrlf(octokit, mockFile('lf.md'))).toBeFalsy();
 });
 
 test('File with mixed line endings is detected properly', async () => {
-  const mock = fetchMock.sandbox().getOnce(contentsEndpoint + 'mixed.md', {
-    body: mockFileContentResponse(mixedFileContents),
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-    },
+  const mockFetch = createMockFetch({
+    'mixed.md': mockFileContentResponse(mixedFileContents),
   });
 
   const octokit = new MyOctokit({
-    request: {
-      fetch: mock,
-    },
+    request: { fetch: mockFetch },
   });
 
   expect(
@@ -184,86 +189,64 @@ const files: PullListFile[] = [
 ];
 
 test('PR with CRLF files is detected properly', async () => {
-  const mock = fetchMock
-    .sandbox()
-    .getOnce(contentsEndpoint + 'file1.md', {
-      body: mockFileContentResponse(crlfFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    })
-    .getOnce(contentsEndpoint + 'file2.md', {
-      body: mockFileContentResponse(lfFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    })
-    .getOnce(contentsEndpoint + 'file3.md', {
-      body: mockFileContentResponse(mixedFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    });
+  const mockFetch = createMockFetch({
+    'file1.md': mockFileContentResponse(crlfFileContents),
+    'file2.md': mockFileContentResponse(lfFileContents),
+    'file3.md': mockFileContentResponse(mixedFileContents),
+  });
 
   const octokit = new MyOctokit({
-    request: {
-      fetch: mock,
-    },
+    request: { fetch: mockFetch },
   });
 
   expect(await checkFilesForCrlf(octokit, files, null)).toHaveLength(2);
 });
 
-test('PR without CRLF files is detected properly', async () => {
-  const mock = fetchMock
-    .sandbox()
-    .getOnce(contentsEndpoint + 'file1.md', {
-      body: mockFileContentResponse(lfFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    })
-    .getOnce(contentsEndpoint + 'file2.md', {
-      body: mockFileContentResponse(lfFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    })
-    .getOnce(contentsEndpoint + 'file3.md', {
-      body: mockFileContentResponse(lfFileContents),
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    });
+test('Excluded files are skipped during CRLF check', async () => {
+  const mockFetch = createMockFetch({
+    // file1.md has CRLF but should be excluded
+    'file1.md': mockFileContentResponse(crlfFileContents),
+    'file2.md': mockFileContentResponse(lfFileContents),
+    'file3.md': mockFileContentResponse(mixedFileContents),
+  });
 
   const octokit = new MyOctokit({
-    request: {
-      fetch: mock,
-    },
+    request: { fetch: mockFetch },
+  });
+
+  // Exclude file1.md — only file3.md (mixed) should be flagged
+  const result = await checkFilesForCrlf(octokit, files, ['**/file1.md']);
+  expect(result).toHaveLength(1);
+  expect(result[0]).toBe('file3.md');
+});
+
+test('PR without CRLF files is detected properly', async () => {
+  const mockFetch = createMockFetch({
+    'file1.md': mockFileContentResponse(lfFileContents),
+    'file2.md': mockFileContentResponse(lfFileContents),
+    'file3.md': mockFileContentResponse(lfFileContents),
+  });
+
+  const octokit = new MyOctokit({
+    request: { fetch: mockFetch },
   });
 
   expect(await checkFilesForCrlf(octokit, files, null)).toHaveLength(0);
 });
 
 const fileList = [
-  'api-reference/beta/api/linkedresource-delete.md',
-  'api-reference/beta/api/linkedresource-get.md',
-  'api-reference/beta/api/linkedresource-update.md',
-  'api-reference/beta/api/opentypeextension-delete.md',
-  'api-reference/beta/api/opentypeextension-get.md',
-  'api-reference/beta/api/opentypeextension-post-opentypeextension.md',
-  'api-reference/beta/api/opentypeextension-update.md',
+  'api-reference/beta/api/linked-resource-delete.md',
+  'api-reference/beta/api/linked-resource-get.md',
+  'api-reference/beta/api/linked-resource-update.md',
+  'api-reference/beta/api/open-type-extension-delete.md',
+  'api-reference/beta/api/open-type-extension-get.md',
+  'api-reference/beta/api/open-type-extension-post-open-type-extension.md',
+  'api-reference/beta/api/open-type-extension-update.md',
   'api-reference/beta/api/todo-list-lists.md',
   'api-reference/beta/api/todo-post-lists.md',
   'api-reference/beta/resources/enums.md',
-  'api-reference/beta/resources/linkedresource.md',
-  'api-reference/beta/resources/opentypeextension.md',
+  'api-reference/beta/resources/linked-resource.md',
+  'api-reference/beta/resources/open-type-extension.md',
   'api-reference/beta/resources/todo-overview.md',
   'api-reference/beta/resources/todo.md',
   'api-reference/beta/resources/user.md',
@@ -286,13 +269,14 @@ const fileList = [
 
 test('Files are correctly excluded with default exclude list', () => {
   fileList.forEach((filename) => {
-    // Is this an image?
+    // Case-insensitive matching: check against lowercased extension
+    const lowerName = filename.toLowerCase();
     const isImage =
-      filename.indexOf('.png') > 0 ||
-      filename.indexOf('.jpg') > 0 ||
-      filename.indexOf('.jpeg') > 0 ||
-      filename.indexOf('.gif') > 0 ||
-      filename.indexOf('.bmp') > 0;
+      lowerName.indexOf('.png') > 0 ||
+      lowerName.indexOf('.jpg') > 0 ||
+      lowerName.indexOf('.jpeg') > 0 ||
+      lowerName.indexOf('.gif') > 0 ||
+      lowerName.indexOf('.bmp') > 0;
 
     expect(isFileExcluded(filename, null)).toBe(isImage);
   });
@@ -302,9 +286,58 @@ const excludePatterns = ['**/**.png', '**/**.gif'];
 
 test('Files are correctly excluded with custom exclude list', () => {
   fileList.forEach((filename) => {
+    const lowerName = filename.toLowerCase();
     const expectedResult =
-      filename.indexOf('.png') > 0 || filename.indexOf('.gif') > 0;
+      lowerName.indexOf('.png') > 0 || lowerName.indexOf('.gif') > 0;
 
     expect(isFileExcluded(filename, excludePatterns)).toBe(expectedResult);
   });
+});
+
+test('Empty exclude array falls back to default exclude list', () => {
+  // images should be excluded by the default list
+  expect(isFileExcluded('concepts/images/todo-api-entities.png', [])).toBe(
+    true,
+  );
+  expect(isFileExcluded('images/image.jpg', [])).toBe(true);
+  // non-images should not be excluded
+  expect(isFileExcluded('README.md', [])).toBe(false);
+});
+
+test('Empty file list returns no errors', async () => {
+  const mockFetch = createMockFetch({});
+  const octokit = new MyOctokit({
+    request: { fetch: mockFetch },
+  });
+
+  expect(await checkFilesForCrlf(octokit, [], null)).toHaveLength(0);
+});
+
+test('PR comment generates correctly for a single file', () => {
+  const comment = generatePrComment(['only-file.md'], 'fix-branch');
+  expect(comment).toContain('- only-file.md');
+  expect(comment).toContain('git rm --cached only-file.md');
+  expect(comment).toContain('git add only-file.md');
+  expect(comment).toContain('git checkout fix-branch');
+});
+
+test('File with bare CR (old Mac-style) is not flagged', async () => {
+  const crOnlyContents = 'This file has\rold Mac-style line-endings.\r';
+  const mockFetch = createMockFetch({
+    'cr-only.md': mockFileContentResponse(crOnlyContents),
+  });
+
+  const octokit = new MyOctokit({
+    request: { fetch: mockFetch },
+  });
+
+  expect(
+    await checkFileContentForCrlf(octokit, mockFile('cr-only.md')),
+  ).toBeFalsy();
+});
+
+test('Uppercase image extension is excluded by default pattern', () => {
+  // The default glob patterns are lowercase; minimatch is case-sensitive
+  expect(isFileExcluded('image.PNG', null)).toBe(true);
+  expect(isFileExcluded('photo.JPG', null)).toBe(true);
 });

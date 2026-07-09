@@ -1,9 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { PullRequestEvent } from '@octokit/webhooks-types';
-import { PullListFile } from './types';
-
-import { checkFilesForCrlf, generatePrComment } from './validation';
+import { PullListFile } from './types.js';
+import { checkFilesForCrlf, generatePrComment } from './validation.js';
 
 async function run(): Promise<void> {
   try {
